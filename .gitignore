@@ -1,0 +1,63 @@
+# ==============================
+# Build / CMake
+# ==============================
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+_install/
+
+# CMake generated files
+*.cmake
+
+# ==============================
+# IDE / Editor
+# ==============================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ==============================
+# Compiled binaries / objects
+# ==============================
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+*.exe
+
+# ==============================
+# Test / Coverage
+# ==============================
+Testing/
+coverage/
+*.gcda
+*.gcno
+*.gcov
+
+# ==============================
+# Logs
+# ==============================
+*.log
+logs/
+
+# ==============================
+# Temporary files
+# ==============================
+tmp/
+temp/
+*.tmp
+
+# ==============================
+# Readme files
+# ==============================
+# implementation_plan_3.md
