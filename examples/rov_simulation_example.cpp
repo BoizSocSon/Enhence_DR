@@ -11,7 +11,10 @@ int main() {
     std::cout << "===============================================================\n\n";
 
     // 1. Nạp cấu hình ROV từ tệp YAML (chứa các thông số cố định của ROV và thông số ArduSub)
-    std::string config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
+    std::string config_path = "config/rov_params.yaml";
+    if (!std::ifstream(config_path).good()) {
+        config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
+    }
     std::cout << "[INFO] Loading configuration from: " << config_path << "\n";
     nav_dynamics::RovConfig rov_cfg = nav_dynamics::ConfigLoader::load_from_yaml(config_path);
 

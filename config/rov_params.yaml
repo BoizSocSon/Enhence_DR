@@ -8,45 +8,62 @@ vehicle:
   name: "Custom_Team_ROV"
   mass: 11.5                            # Khối lượng khô của phương tiện [kg]
   volume: 0.0116                        # Thể tích nước chiếm chỗ [m^3] (~11.89 kg sức nổi trong nước biển)
-  center_of_gravity: [0.0, 0.0, 0.02]   # r_G = [x_G, y_G, z_G] trong hệ thân tàu [m] (Trọng tâm CoG hơi thấp hơn gốc tọa độ)
-  center_of_buoyancy: [0.0, 0.0, -0.02] # r_B = [x_B, y_B, z_B] trong hệ thân tàu [m] (Tâm nổi CoB hơi cao hơn gốc tọa độ)
+  center_of_gravity:  # r_G = [x_G, y_G, z_G] trong hệ thân tàu [m] (Trọng tâm CoG hơi thấp hơn gốc tọa độ)
+    x_G: 0.0
+    y_G: 0.0
+    z_G: 0.02
+
+  center_of_buoyancy:  # r_B = [x_B, y_B, z_B] trong hệ thân tàu [m] (Tâm nổi CoB hơi cao hơn gốc tọa độ)
+    x_B: 0.0
+    y_B: 0.0
+    z_B: -0.02
+  
   inertia_tensor:                       # Mô-men quán tính vật rắn [kg*m^2]
     Ixx: 0.16
-    Iyy: 0.35
-    Izz: 0.35
     Ixy: 0.0
     Ixz: 0.0
+
+    Iyx: 0.0
+    Iyy: 0.35
     Iyz: 0.0
 
+    Izx: 0.0
+    Izy: 0.0
+    Izz: 0.35
+    
 # --- 2. Các đạo hàm thủy động học (Theo tiêu chuẩn Fossen Marine Craft) ---
-# Các tham số này có thể tính toán qua mô phỏng CFD, mô hình CAD hoặc thực nghiệm trên tàu
+# Biểu diễn dưới dạng ma trận 6x6 [Surge, Sway, Heave, Roll, Pitch, Yaw]
+# Trực quan, dễ đọc, dễ dàng tinh chỉnh cả trục chính (đường chéo) và các hệ số ghép chéo (cross-coupling).
 hydrodynamics:
-  # Khối lượng gia tăng đường chéo (M_A) [kg, kg*m^2]
-  added_mass_diagonal:
-    X_udot: 5.5   # Khối lượng gia tăng chuyển động tiến (Surge)
-    Y_vdot: 8.0   # Khối lượng gia tăng chuyển động dạt ngang (Sway)
-    Z_wdot: 14.6  # Khối lượng gia tăng chuyển động nâng/hạ (Heave)
-    K_pdot: 0.05  # Khối lượng gia tăng lắc ngang (Roll)
-    M_qdot: 0.12  # Khối lượng gia tăng chúi/ngóc (Pitch)
-    N_rdot: 0.12  # Khối lượng gia tăng quay trở (Yaw)
+  # Ma trận khối lượng gia tăng (Added Mass 6x6) M_A [kg, kg*m^2]
+  # Cột:     [  u_dot,  v_dot,  w_dot,  p_dot,  q_dot,  r_dot ]
+  added_mass_matrix:
+    - [  5.50,   0.00,   0.00,   0.00,   0.00,   0.00 ] # Surge (X)
+    - [  0.00,   8.00,   0.00,   0.00,   0.00,   0.00 ] # Sway  (Y)
+    - [  0.00,   0.00,  14.60,   0.00,   0.00,   0.00 ] # Heave (Z)
+    - [  0.00,   0.00,   0.00,   0.05,   0.00,   0.00 ] # Roll  (K)
+    - [  0.00,   0.00,   0.00,   0.00,   0.12,   0.00 ] # Pitch (M)
+    - [  0.00,   0.00,   0.00,   0.00,   0.00,   0.12 ] # Yaw   (N)
 
-  # Lực cản tuyến tính (D_l: ma sát nhớt bề mặt) [Ns/m, Nms/rad]
-  linear_damping:
-    Xu: 4.03
-    Yv: 6.22
-    Zw: 11.17
-    Kp: 0.07
-    Mq: 0.07
-    Nr: 0.07
+  # Ma trận cản tuyến tính (Linear Damping 6x6) D_l [Ns/m, Nms/rad] (ma sát nhớt bề mặt)
+  # Cột:     [      u,      v,      w,      p,      q,      r ]
+  linear_damping_matrix:
+    - [  4.03,   0.00,   0.00,   0.00,   0.00,   0.00 ] # Surge (X)
+    - [  0.00,   6.22,   0.00,   0.00,   0.00,   0.00 ] # Sway  (Y)
+    - [  0.00,   0.00,  11.17,   0.00,   0.00,   0.00 ] # Heave (Z)
+    - [  0.00,   0.00,   0.00,   0.07,   0.00,   0.00 ] # Roll  (K)
+    - [  0.00,   0.00,   0.00,   0.00,   0.07,   0.00 ] # Pitch (M)
+    - [  0.00,   0.00,   0.00,   0.00,   0.00,   0.07 ] # Yaw   (N)
 
-  # Lực cản bậc hai (D_q: cản hình dáng) [Ns^2/m^2, Nms^2/rad^2]
-  quadratic_damping:
-    Xuu: 18.18
-    Yvv: 21.66
-    Zww: 36.99
-    Kpp: 1.55
-    Mqq: 1.55
-    Nrr: 1.55
+  # Ma trận cản bậc hai (Quadratic Damping 6x6) D_q [Ns^2/m^2, Nms^2/rad^2] (cản hình dáng phi tuyến)
+  # Cột:     [    |u|,    |v|,    |w|,    |p|,    |q|,    |r| ]
+  quadratic_damping_matrix:
+    - [ 18.18,   0.00,   0.00,   0.00,   0.00,   0.00 ] # Surge (X)
+    - [  0.00,  21.66,   0.00,   0.00,   0.00,   0.00 ] # Sway  (Y)
+    - [  0.00,   0.00,  36.99,   0.00,   0.00,   0.00 ] # Heave (Z)
+    - [  0.00,   0.00,   0.00,   1.55,   0.00,   0.00 ] # Roll  (K)
+    - [  0.00,   0.00,   0.00,   0.00,   1.55,   0.00 ] # Pitch (M)
+    - [  0.00,   0.00,   0.00,   0.00,   0.00,   1.55 ] # Yaw   (N)
 
 # --- 3. Các thông số tương thích ArduSub (AP_Motors6DOF & Cảm biến) ---
 ardusub:
@@ -80,6 +97,7 @@ ardusub:
         roll: 0.0
         pitch: 0.0
         yaw: 0.12                       # Cánh tay đòn mô-men d_y = 0.12 m
+
     - name: "thruster_right"
       position: [-0.15, 0.12, 0.0]
       direction: [1.0, 0.0, 0.0]        # Véc-tơ đơn vị (+x hướng tiến)
@@ -90,6 +108,7 @@ ardusub:
         roll: 0.0
         pitch: 0.0
         yaw: -0.12                      # Cánh tay đòn mô-men -d_y = -0.12 m
+
     - name: "thruster_vertical"
       position: [0.0, 0.0, 0.0]
       direction: [0.0, 0.0, -1.0]       # Véc-tơ đơn vị (-z hướng lên trên)
@@ -103,11 +122,20 @@ ardusub:
 
 # --- 4. Cấu hình thu giảm bậc tự do (DOF) ---
 dof_config:
-  preset: "ROV_3DOF_SURGE_HEAVE_YAW"    # FULL_6DOF, ROV_3DOF_SURGE_HEAVE_YAW, PLANAR_3DOF, ROV_4DOF, CUSTOM
+  # Các cấu hình có sẵn:
+  # FULL_6DOF: Đầy đủ 6 bậc tự do
+  # ROV_3DOF_SURGE_HEAVE_YAW: 3 bậc tự do tịnh tiến (Surge, Heave) và quay (Yaw)
+  # PLANAR_3DOF: 3 bậc tự do trên mặt phẳng (Surge, Sway, Yaw)
+  # ROV_4DOF: 4 bậc tự do tịnh tiến và quay (Surge, Heave, Roll, Pitch)
+  # CUSTOM: Cấu hình tùy chỉnh
+
+  # Cấu hình 3 DOF bản 1 (Surge, Heave, Yaw)
+  preset: "ROV_3DOF_CONFIG_1"
   active_dofs:
     - "SURGE"
     - "HEAVE"
     - "YAW"
+
 
 # --- 5. Các thông số môi trường toàn cục NED ---
 # Được định nghĩa trong hệ quy chiếu Bắc - Đông - Dưới {n} gắn với Trái đất
@@ -115,4 +143,7 @@ ned_environment:
   gravity: 9.80665                      # Gia tốc trọng trường [m/s^2] (+z hướng xuống)
   fluid_density: 1025.0                 # Khối lượng riêng nước biển [kg/m^3] (1000.0 đối với nước ngọt)
   surface_atmospheric_pressure: 101325  # Áp suất khí quyển tại mặt nước [Pa]
-  nominal_ocean_current: [0.0, 0.0, 0.0]# Vận tốc dòng chảy đại dương [v_cN, v_cE, v_cD] [m/s] trong hệ NED
+  nominal_ocean_current:                # Vận tốc dòng chảy đại dương [v_cN, v_cE, v_cD] [m/s] trong hệ NED
+    v_cN: 0.0
+    v_cE: 0.0
+    v_cD: 0.0

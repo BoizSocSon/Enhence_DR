@@ -54,6 +54,9 @@ public:
     /// Nạp toàn bộ cấu hình ROV từ một tệp YAML
     static RovConfig load_from_yaml(const std::string& filepath);
 
+    /// Nạp nhanh chỉ các thông số vật lý và thủy động học (VehicleParameters) từ tệp YAML
+    static VehicleParameters load_vehicle_parameters(const std::string& filepath);
+
     /// Lưu cấu hình ROV ra một tệp YAML
     static void save_to_yaml(const RovConfig& config, const std::string& filepath);
 };

@@ -16,75 +16,174 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
 
     RovConfig config;
 
-    // --- 1. Các thông số vật rắn của phương tiện ---
+namespace {
+
+bool parse_matrix6d(const YAML::Node& node, Matrix6d& out_mat) {
+    if (!node) return false;
+    if (node.IsSequence()) {
+        // Dạng bảng 6 dòng x 6 cột: [[...], [...], ...]
+        if (node.size() == 6 && node[0].IsSequence() && node[0].size() == 6) {
+            for (int r = 0; r < 6; ++r) {
+                for (int c = 0; c < 6; ++c) {
+                    out_mat(r, c) = node[r][c].as<double>();
+                }
+            }
+            return true;
+        }
+        // Dạng mảng phẳng 36 phần tử liên tiếp
+        if (node.size() == 36) {
+            std::vector<double> vals = node.as<std::vector<double>>();
+            out_mat = Eigen::Map<const Eigen::Matrix<double, 6, 6, Eigen::RowMajor>>(vals.data());
+            return true;
+        }
+    }
+    return false;
+}
+
+void parse_vehicle_parameters_from_node(const YAML::Node& root, VehicleParameters& params) {
+    // 1. Các thông số vật rắn
     if (root["vehicle"]) {
         auto v_node = root["vehicle"];
-        if (v_node["name"]) config.vehicle_name = v_node["name"].as<std::string>();
-        if (v_node["mass"]) config.vehicle_params.mass = v_node["mass"].as<double>();
-        if (v_node["volume"]) config.vehicle_params.volume = v_node["volume"].as<double>();
+        if (v_node["mass"]) params.mass = v_node["mass"].as<double>();
+        if (v_node["volume"]) params.volume = v_node["volume"].as<double>();
+        if (v_node["fluid_density"]) params.fluid_density = v_node["fluid_density"].as<double>();
+        if (v_node["gravity"]) params.gravity = v_node["gravity"].as<double>();
 
-        if (v_node["center_of_gravity"] && v_node["center_of_gravity"].IsSequence()) {
+        if (v_node["center_of_gravity"]) {
             auto cg = v_node["center_of_gravity"];
-            config.vehicle_params.r_G = Vector3d(cg[0].as<double>(), cg[1].as<double>(), cg[2].as<double>());
+            if (cg.IsSequence() && cg.size() >= 3) {
+                params.r_G = Vector3d(cg[0].as<double>(), cg[1].as<double>(), cg[2].as<double>());
+            } else if (cg.IsMap()) {
+                double x = cg["x_G"] ? cg["x_G"].as<double>() : (cg["x"] ? cg["x"].as<double>() : 0.0);
+                double y = cg["y_G"] ? cg["y_G"].as<double>() : (cg["y"] ? cg["y"].as<double>() : 0.0);
+                double z = cg["z_G"] ? cg["z_G"].as<double>() : (cg["z"] ? cg["z"].as<double>() : 0.0);
+                params.r_G = Vector3d(x, y, z);
+            }
         }
 
-        if (v_node["center_of_buoyancy"] && v_node["center_of_buoyancy"].IsSequence()) {
+        if (v_node["center_of_buoyancy"]) {
             auto cb = v_node["center_of_buoyancy"];
-            config.vehicle_params.r_B = Vector3d(cb[0].as<double>(), cb[1].as<double>(), cb[2].as<double>());
+            if (cb.IsSequence() && cb.size() >= 3) {
+                params.r_B = Vector3d(cb[0].as<double>(), cb[1].as<double>(), cb[2].as<double>());
+            } else if (cb.IsMap()) {
+                double x = cb["x_B"] ? cb["x_B"].as<double>() : (cb["x"] ? cb["x"].as<double>() : 0.0);
+                double y = cb["y_B"] ? cb["y_B"].as<double>() : (cb["y"] ? cb["y"].as<double>() : 0.0);
+                double z = cb["z_B"] ? cb["z_B"].as<double>() : (cb["z"] ? cb["z"].as<double>() : 0.0);
+                params.r_B = Vector3d(x, y, z);
+            }
         }
 
         if (v_node["inertia_tensor"]) {
             auto I = v_node["inertia_tensor"];
-            double Ixx = I["Ixx"] ? I["Ixx"].as<double>() : 0.16;
-            double Iyy = I["Iyy"] ? I["Iyy"].as<double>() : 0.35;
-            double Izz = I["Izz"] ? I["Izz"].as<double>() : 0.35;
-            double Ixy = I["Ixy"] ? I["Ixy"].as<double>() : 0.0;
-            double Ixz = I["Ixz"] ? I["Ixz"].as<double>() : 0.0;
-            double Iyz = I["Iyz"] ? I["Iyz"].as<double>() : 0.0;
+            if (I.IsSequence() && I.size() == 3 && I[0].IsSequence() && I[0].size() == 3) {
+                for (int r = 0; r < 3; ++r) {
+                    for (int c = 0; c < 3; ++c) {
+                        params.I_b(r, c) = I[r][c].as<double>();
+                    }
+                }
+            } else if (I.IsMap()) {
+                double Ixx = I["Ixx"] ? I["Ixx"].as<double>() : 0.16;
+                double Iyy = I["Iyy"] ? I["Iyy"].as<double>() : 0.35;
+                double Izz = I["Izz"] ? I["Izz"].as<double>() : 0.35;
+                double Ixy = I["Ixy"] ? I["Ixy"].as<double>() : 0.0;
+                double Ixz = I["Ixz"] ? I["Ixz"].as<double>() : 0.0;
+                double Iyz = I["Iyz"] ? I["Iyz"].as<double>() : 0.0;
 
-            config.vehicle_params.I_b <<  Ixx, -Ixy, -Ixz,
-                                         -Ixy,  Iyy, -Iyz,
-                                         -Ixz, -Iyz,  Izz;
+                params.I_b <<  Ixx, -Ixy, -Ixz,
+                              -Ixy,  Iyy, -Iyz,
+                              -Ixz, -Iyz,  Izz;
+            }
         }
     }
 
-    // --- 2. Các thông số thủy động học ---
+    // 2. Các thông số thủy động học 6x6 (hỗ trợ cả trục chính và coupling)
     if (root["hydrodynamics"]) {
         auto h_node = root["hydrodynamics"];
 
-        if (h_node["added_mass_diagonal"]) {
+        // Added Mass (M_A)
+        if (h_node["added_mass_matrix"] && parse_matrix6d(h_node["added_mass_matrix"], params.M_A)) {
+            // Đã nạp thành công ma trận 6x6 đầy đủ
+        } else if (h_node["added_mass_diagonal"]) {
             auto am = h_node["added_mass_diagonal"];
-            double X_udot = am["X_udot"] ? am["X_udot"].as<double>() : 5.5;
-            double Y_vdot = am["Y_vdot"] ? am["Y_vdot"].as<double>() : 8.0;
-            double Z_wdot = am["Z_wdot"] ? am["Z_wdot"].as<double>() : 14.6;
-            double K_pdot = am["K_pdot"] ? am["K_pdot"].as<double>() : 0.05;
-            double M_qdot = am["M_qdot"] ? am["M_qdot"].as<double>() : 0.12;
-            double N_rdot = am["N_rdot"] ? am["N_rdot"].as<double>() : 0.12;
-            config.vehicle_params.set_added_mass_diagonal(X_udot, Y_vdot, Z_wdot, K_pdot, M_qdot, N_rdot);
+            if (am.IsSequence() && am.size() == 6) {
+                params.set_added_mass_diagonal(
+                    am[0].as<double>(), am[1].as<double>(), am[2].as<double>(),
+                    am[3].as<double>(), am[4].as<double>(), am[5].as<double>()
+                );
+            } else if (am.IsMap()) {
+                double X_udot = am["X_udot"] ? am["X_udot"].as<double>() : 5.5;
+                double Y_vdot = am["Y_vdot"] ? am["Y_vdot"].as<double>() : 8.0;
+                double Z_wdot = am["Z_wdot"] ? am["Z_wdot"].as<double>() : 14.6;
+                double K_pdot = am["K_pdot"] ? am["K_pdot"].as<double>() : 0.05;
+                double M_qdot = am["M_qdot"] ? am["M_qdot"].as<double>() : 0.12;
+                double N_rdot = am["N_rdot"] ? am["N_rdot"].as<double>() : 0.12;
+                params.set_added_mass_diagonal(X_udot, Y_vdot, Z_wdot, K_pdot, M_qdot, N_rdot);
+            }
         }
 
-        if (h_node["linear_damping"]) {
+        // Linear Damping (D_l)
+        if (h_node["linear_damping_matrix"] && parse_matrix6d(h_node["linear_damping_matrix"], params.D_l)) {
+            // Đã nạp thành công ma trận 6x6 đầy đủ
+        } else if (h_node["linear_damping"]) {
             auto ld = h_node["linear_damping"];
-            double Xu = ld["Xu"] ? ld["Xu"].as<double>() : 4.03;
-            double Yv = ld["Yv"] ? ld["Yv"].as<double>() : 6.22;
-            double Zw = ld["Zw"] ? ld["Zw"].as<double>() : 11.17;
-            double Kp = ld["Kp"] ? ld["Kp"].as<double>() : 0.07;
-            double Mq = ld["Mq"] ? ld["Mq"].as<double>() : 0.07;
-            double Nr = ld["Nr"] ? ld["Nr"].as<double>() : 0.07;
-            config.vehicle_params.set_linear_damping_diagonal(Xu, Yv, Zw, Kp, Mq, Nr);
+            if (ld.IsSequence() && ld.size() == 6) {
+                params.set_linear_damping_diagonal(
+                    ld[0].as<double>(), ld[1].as<double>(), ld[2].as<double>(),
+                    ld[3].as<double>(), ld[4].as<double>(), ld[5].as<double>()
+                );
+            } else if (ld.IsMap()) {
+                double Xu = ld["Xu"] ? ld["Xu"].as<double>() : 4.03;
+                double Yv = ld["Yv"] ? ld["Yv"].as<double>() : 6.22;
+                double Zw = ld["Zw"] ? ld["Zw"].as<double>() : 11.17;
+                double Kp = ld["Kp"] ? ld["Kp"].as<double>() : 0.07;
+                double Mq = ld["Mq"] ? ld["Mq"].as<double>() : 0.07;
+                double Nr = ld["Nr"] ? ld["Nr"].as<double>() : 0.07;
+                params.set_linear_damping_diagonal(Xu, Yv, Zw, Kp, Mq, Nr);
+            }
         }
 
-        if (h_node["quadratic_damping"]) {
+        // Quadratic Damping (D_q)
+        if (h_node["quadratic_damping_matrix"] && parse_matrix6d(h_node["quadratic_damping_matrix"], params.D_q)) {
+            // Đã nạp thành công ma trận 6x6 đầy đủ
+        } else if (h_node["quadratic_damping"]) {
             auto qd = h_node["quadratic_damping"];
-            double Xuu = qd["Xuu"] ? qd["Xuu"].as<double>() : 18.18;
-            double Yvv = qd["Yvv"] ? qd["Yvv"].as<double>() : 21.66;
-            double Zww = qd["Zww"] ? qd["Zww"].as<double>() : 36.99;
-            double Kpp = qd["Kpp"] ? qd["Kpp"].as<double>() : 1.55;
-            double Mqq = qd["Mqq"] ? qd["Mqq"].as<double>() : 1.55;
-            double Nrr = qd["Nrr"] ? qd["Nrr"].as<double>() : 1.55;
-            config.vehicle_params.set_quadratic_damping_diagonal(Xuu, Yvv, Zww, Kpp, Mqq, Nrr);
+            if (qd.IsSequence() && qd.size() == 6) {
+                params.set_quadratic_damping_diagonal(
+                    qd[0].as<double>(), qd[1].as<double>(), qd[2].as<double>(),
+                    qd[3].as<double>(), qd[4].as<double>(), qd[5].as<double>()
+                );
+            } else if (qd.IsMap()) {
+                double Xuu = qd["Xuu"] ? qd["Xuu"].as<double>() : 18.18;
+                double Yvv = qd["Yvv"] ? qd["Yvv"].as<double>() : 21.66;
+                double Zww = qd["Zww"] ? qd["Zww"].as<double>() : 36.99;
+                double Kpp = qd["Kpp"] ? qd["Kpp"].as<double>() : 1.55;
+                double Mqq = qd["Mqq"] ? qd["Mqq"].as<double>() : 1.55;
+                double Nrr = qd["Nrr"] ? qd["Nrr"].as<double>() : 1.55;
+                params.set_quadratic_damping_diagonal(Xuu, Yvv, Zww, Kpp, Mqq, Nrr);
+            }
         }
     }
+}
+
+} // anonymous namespace
+
+RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
+    YAML::Node root;
+    try {
+        root = YAML::LoadFile(filepath);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("ConfigLoader::load_from_yaml failed to open file '" + filepath + "': " + e.what());
+    }
+
+    RovConfig config;
+
+    // --- 1. Tên phương tiện ---
+    if (root["vehicle"] && root["vehicle"]["name"]) {
+        config.vehicle_name = root["vehicle"]["name"].as<std::string>();
+    }
+
+    // --- 2. Nạp toàn bộ thông số vật lý & ma trận 6x6 (M_A, D_l, D_q, I_b) trong 1 lần gọi ---
+    parse_vehicle_parameters_from_node(root, config.vehicle_params);
 
     // --- 3. Các thông số ArduSub & Động cơ đẩy ---
     std::vector<ThrusterUnit> thrusters;
@@ -187,6 +286,27 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
     }
 
     return config;
+}
+
+VehicleParameters ConfigLoader::load_vehicle_parameters(const std::string& filepath) {
+    YAML::Node root;
+    try {
+        root = YAML::LoadFile(filepath);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("ConfigLoader::load_vehicle_parameters failed to open file '" + filepath + "': " + e.what());
+    }
+
+    VehicleParameters params;
+    parse_vehicle_parameters_from_node(root, params);
+
+    // Đồng bộ gia tốc trọng trường và khối lượng riêng nếu có khai báo trong ned_environment
+    if (root["ned_environment"]) {
+        auto n_node = root["ned_environment"];
+        if (n_node["gravity"]) params.gravity = n_node["gravity"].as<double>();
+        if (n_node["fluid_density"]) params.fluid_density = n_node["fluid_density"].as<double>();
+    }
+
+    return params;
 }
 
 void ConfigLoader::save_to_yaml(const RovConfig& config, const std::string& filepath) {

@@ -6,8 +6,16 @@
 int main() {
     std::cout << "[TEST] Running test_config_loader..." << std::endl;
 
-    std::string config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
+    std::string config_path = "config/rov_params.yaml";
+    if (!std::ifstream(config_path).good()) {
+        config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
+    }
     nav_dynamics::RovConfig cfg = nav_dynamics::ConfigLoader::load_from_yaml(config_path);
+
+    // Kiểm tra nạp nhanh chỉ VehicleParameters (1 lần gọi)
+    nav_dynamics::VehicleParameters v_params = nav_dynamics::ConfigLoader::load_vehicle_parameters(config_path);
+    NAV_TEST_ASSERT(std::abs(v_params.mass - 11.5) < 1e-9, "load_vehicle_parameters mass mismatch!");
+    NAV_TEST_ASSERT(std::abs(v_params.M_A(0, 0) - 5.5) < 1e-9, "load_vehicle_parameters M_A(0,0) mismatch!");
 
     // 1. Kiểm tra các thông số vật rắn của phương tiện
     NAV_TEST_ASSERT(cfg.vehicle_name == "Custom_Team_ROV", "Vehicle name mismatch!");
