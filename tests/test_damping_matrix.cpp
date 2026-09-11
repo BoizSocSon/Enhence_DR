@@ -12,30 +12,30 @@ int main() {
 
     nav_dynamics::DampingMatrixEvaluator evaluator(params);
 
-    // 1. Dissipativity Test
+    // 1. Kiểm tra tính tiêu tán năng lượng
     nav_dynamics::Vector6d nu_r;
     nu_r << 0.5, -0.2, 0.3, 0.05, -0.05, 0.4;
     NAV_TEST_ASSERT(evaluator.is_dissipative(nu_r), "Damping must be strictly dissipative!");
 
-    // 2. Compute Damping Force Vector
+    // 2. Tính véc-tơ lực cản
     nav_dynamics::Vector6d f_d = evaluator.compute_damping_force(nu_r);
 
-    // Check surge force: (Xu + Xuu * |u|) * u
+    // Kiểm tra lực cản chuyển động tiến (surge): (Xu + Xuu * |u|) * u
     double u = nu_r(0);
     double expected_f_u = (4.03 + 18.18 * std::abs(u)) * u;
     NAV_TEST_ASSERT(std::abs(f_d(0) - expected_f_u) < 1e-9, "Surge damping force mismatch!");
 
-    // Check heave force: (Zw + Zww * |w|) * w
+    // Kiểm tra lực cản chuyển động nâng/hạ (heave): (Zw + Zww * |w|) * w
     double w = nu_r(2);
     double expected_f_w = (11.17 + 36.99 * std::abs(w)) * w;
     NAV_TEST_ASSERT(std::abs(f_d(2) - expected_f_w) < 1e-9, "Heave damping force mismatch!");
 
-    // Check yaw torque: (Nr + Nrr * |r|) * r
+    // Kiểm tra mô-men cản quay trở (yaw): (Nr + Nrr * |r|) * r
     double r = nu_r(5);
     double expected_tau_r = (0.07 + 1.55 * std::abs(r)) * r;
     NAV_TEST_ASSERT(std::abs(f_d(5) - expected_tau_r) < 1e-9, "Yaw damping torque mismatch!");
 
-    // 3. 3-DOF Reduced Damping Matrix
+    // 3. Ma trận cản thu giảm 3-DOF
     auto config_3dof = nav_dynamics::DofConfig::make_rov_3dof();
     nav_dynamics::MatrixNd D_3 = evaluator.compute_reduced(config_3dof, nu_r);
     NAV_TEST_ASSERT(D_3.rows() == 3 && D_3.cols() == 3, "D_3 dimensions mismatch!");

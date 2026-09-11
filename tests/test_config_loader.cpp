@@ -9,7 +9,7 @@ int main() {
     std::string config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
     nav_dynamics::RovConfig cfg = nav_dynamics::ConfigLoader::load_from_yaml(config_path);
 
-    // 1. Check Vehicle Rigid Body Parameters
+    // 1. Kiểm tra các thông số vật rắn của phương tiện
     NAV_TEST_ASSERT(cfg.vehicle_name == "Custom_Team_ROV", "Vehicle name mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.mass - 11.5) < 1e-9, "Mass mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.volume - 0.0116) < 1e-9, "Volume mismatch!");
@@ -19,7 +19,7 @@ int main() {
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.I_b(1, 1) - 0.35) < 1e-9, "Iyy mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.I_b(2, 2) - 0.35) < 1e-9, "Izz mismatch!");
 
-    // 2. Check Hydrodynamic Derivatives
+    // 2. Kiểm tra các đạo hàm thủy động học
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.M_A(0, 0) - 5.5) < 1e-9, "Added mass X_udot mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.M_A(2, 2) - 14.6) < 1e-9, "Added mass Z_wdot mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.M_A(5, 5) - 0.12) < 1e-9, "Added mass N_rdot mismatch!");
@@ -32,7 +32,7 @@ int main() {
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.D_q(2, 2) - 36.99) < 1e-9, "Quadratic damping Zww mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.vehicle_params.D_q(5, 5) - 1.55) < 1e-9, "Quadratic damping Nrr mismatch!");
 
-    // 3. Check ArduSub Compatible Parameters
+    // 3. Kiểm tra các thông số tương thích ArduSub
     NAV_TEST_ASSERT(cfg.ardusub_cfg.frame_type == "CUSTOM_3THRUSTER", "Frame type mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.ardusub_cfg.pwm_min - 1100.0) < 1e-9, "PWM min mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.ardusub_cfg.pwm_max - 1900.0) < 1e-9, "PWM max mismatch!");
@@ -41,16 +41,16 @@ int main() {
     NAV_TEST_ASSERT(cfg.ardusub_cfg.imu_lever_arms.count("imu1") == 1, "Must contain imu1!");
     NAV_TEST_ASSERT(cfg.ardusub_cfg.imu_lever_arms.count("imu5") == 1, "Must contain imu5 (CoM)!");
 
-    // 4. Check Thruster Allocation
+    // 4. Kiểm tra phân bổ lực đẩy động cơ
     NAV_TEST_ASSERT(cfg.thruster_allocation.num_thrusters() == 3, "Must have 3 thrusters loaded!");
 
-    // 5. Check DOF Transformer
+    // 5. Kiểm tra bộ biến đổi bậc tự do (DOF Transformer)
     NAV_TEST_ASSERT(cfg.dof_transformer.reduced_dim() == 3, "Loaded DOF transformer dim must be 3!");
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::SURGE), "Surge must be active!");
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::HEAVE), "Heave must be active!");
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::YAW), "Yaw must be active!");
 
-    // 6. Check NED Environment
+    // 6. Kiểm tra các thông số môi trường NED
     NAV_TEST_ASSERT(std::abs(cfg.ned_env.gravity - 9.80665) < 1e-9, "Gravity mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.ned_env.fluid_density - 1025.0) < 1e-9, "Fluid density mismatch!");
     NAV_TEST_ASSERT(std::abs(cfg.ned_env.surface_atmospheric_pressure - 101325.0) < 1e-9, "P_atm mismatch!");

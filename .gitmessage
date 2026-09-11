@@ -1,0 +1,29 @@
+# --- COMMIT MESSAGE TEMPLATE ---
+# Format: <type>(<scope>): <subject> (Max 72 chars, imperative mood, lowercase)
+#
+# [Type]: feat | fix | refactor | perf | test | docs | chore | ci
+#
+# [Current Scopes - Dynamics]:
+#   dynamics | dynamics-mass | dynamics-coriolis | dynamics-damping
+#   dynamics-restoring | dynamics-thruster | dynamics-dof | dynamics-solver | adapter
+#
+# [Upcoming Scopes - Multi-IMU Fusion]:
+#   fusion | fusion-filter | fusion-sync | fusion-fdi | fusion-kinematics
+#   fusion-omega-dot | fusion-vimu
+#
+# [Upcoming Scopes - State Estimation]:
+#   estimator | estimator-lie | estimator-inekf | estimator-eskf
+#   estimator-predict | estimator-update | estimator-calib | estimator-constraint
+#
+# [General Scopes]:
+#   driver | msgs | config | sim | core | test | ci | docs
+#
+# --- Example Header ---
+# feat(dynamics-coriolis): calculate rigid-body and added mass Coriolis matrix
+# ----------------------
+
+# Explain WHY this change is made and what mathematical/physical problem it solves:
+
+
+# Footer: Breaking changes, issue tracking (e.g., Closes #12, Refs #45)
+

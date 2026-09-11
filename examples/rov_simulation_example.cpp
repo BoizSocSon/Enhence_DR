@@ -10,7 +10,7 @@ int main() {
     std::cout << "   ROV 6-DOF Dynamic Model & ConfigLoader Simulation Demo\n";
     std::cout << "===============================================================\n\n";
 
-    // 1. Load ROV configuration from YAML file (contains ROV fixed & ArduSub params)
+    // 1. Nạp cấu hình ROV từ tệp YAML (chứa các thông số cố định của ROV và thông số ArduSub)
     std::string config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
     std::cout << "[INFO] Loading configuration from: " << config_path << "\n";
     nav_dynamics::RovConfig rov_cfg = nav_dynamics::ConfigLoader::load_from_yaml(config_path);
@@ -25,17 +25,17 @@ int main() {
     std::cout << "[INFO] Transformer Orthogonality (T * T^T == I): "
               << (rov_cfg.dof_transformer.is_orthogonal() ? "VALID" : "INVALID") << "\n\n";
 
-    // 2. Initialize Dynamic Model using loaded configuration
+    // 2. Khởi tạo Mô hình Động lực học sử dụng cấu hình đã nạp
     nav_dynamics::DynamicModel rov_model(rov_cfg.vehicle_params,
                                          rov_cfg.dof_transformer,
                                          rov_cfg.thruster_allocation);
 
-    // 3. Initial State & NED Environment current
+    // 3. Trạng thái ban đầu & Dòng chảy môi trường NED
     nav_dynamics::KinematicState state;
     nav_dynamics::FluidCurrent ocean_current(rov_cfg.ned_env.nominal_ocean_current);
 
-    double dt = 0.05;       // 20 Hz simulation rate
-    double sim_time = 5.0;  // 5 seconds
+    double dt = 0.05;       // Tần số mô phỏng 20 Hz (bước thời gian 0.05s)
+    double sim_time = 5.0;  // Thời gian mô phỏng 5 giây
     int total_steps = static_cast<int>(sim_time / dt);
 
     std::cout << std::fixed << std::setprecision(3);
@@ -45,26 +45,26 @@ int main() {
     for (int step = 0; step <= total_steps; ++step) {
         double t = step * dt;
 
-        // Commanded thruster forces
+        // Lực đẩy động cơ điều khiển
         nav_dynamics::VectorNd thrusts(3);
         if (t < 2.0) {
-            // Maneuver 1: Dive down (TV = 8 N) and slow forward (TL=TR=5 N)
+            // Thao tác 1: Lặn xuống (TV = 8 N) và tiến chậm (TL=TR=5 N)
             thrusts << 5.0, 5.0, 8.0;
         } else {
-            // Maneuver 2: Turn right (TL=15 N, TR=5 N) while maintaining depth
+            // Thao tác 2: Quay phải (TL=15 N, TR=5 N) trong khi duy trì độ sâu
             thrusts << 15.0, 5.0, 4.0;
         }
 
-        // Map thrusters to 6D wrench: tau = B * T
+        // Ánh xạ lực đẩy các động cơ sang wrench 6D: tau = B * T
         nav_dynamics::Vector6d tau = rov_cfg.thruster_allocation.forward_allocation(thrusts);
 
-        // Compute forward dynamics & breakdown
+        // Tính toán động lực học thuận & phân tích chi tiết các lực
         nav_dynamics::DynamicBreakdown bd = rov_model.evaluate_breakdown(state, tau, ocean_current);
 
-        // Step simulation using RK4
+        // Bước mô phỏng sử dụng tích phân Runge-Kutta bậc 4 (RK4)
         rov_model.step_rk4(state, tau, dt, ocean_current);
 
-        // Print telemetry every 0.5 seconds
+        // In dữ liệu đo xa (telemetry) mỗi 0.5 giây
         if (step % 10 == 0) {
             std::cout << std::setw(8) << t << " | "
                       << std::setw(6) << state.pos_ned.x() << " "
@@ -84,7 +84,7 @@ int main() {
     std::cout << "   ROS Message Standardization Output (Zero-ROS Dependency)\n";
     std::cout << "===============================================================\n";
 
-    // Convert state to ROS POD types
+    // Chuyển đổi trạng thái sang các kiểu POD tương thích ROS
     nav_dynamics::OdometryPOD odom = nav_dynamics::RosAdapter::to_odometry_pod(state);
     nav_dynamics::TwistPOD twist = nav_dynamics::RosAdapter::to_twist_pod(state.nu);
     nav_dynamics::WrenchPOD wrench = nav_dynamics::RosAdapter::to_wrench_pod(state.nu_dot);

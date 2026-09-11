@@ -9,7 +9,7 @@ namespace nav_dynamics {
 #pragma pack(push, 1)
 
 /**
- * @brief Plain Old Data (POD) 3D Vector layout
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn véc-tơ 3D
  */
 struct Vector3POD {
     double x = 0.0;
@@ -18,7 +18,7 @@ struct Vector3POD {
 };
 
 /**
- * @brief Plain Old Data (POD) Quaternion layout (ROS standard: x, y, z, w)
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Quaternion (chuẩn ROS: x, y, z, w)
  */
 struct QuaternionPOD {
     double x = 0.0;
@@ -28,7 +28,7 @@ struct QuaternionPOD {
 };
 
 /**
- * @brief Plain Old Data (POD) Twist layout matching geometry_msgs::Twist
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Twist tương thích geometry_msgs::Twist
  */
 struct TwistPOD {
     Vector3POD linear;
@@ -36,7 +36,7 @@ struct TwistPOD {
 };
 
 /**
- * @brief Plain Old Data (POD) Wrench layout matching geometry_msgs::Wrench
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Wrench tương thích geometry_msgs::Wrench
  */
 struct WrenchPOD {
     Vector3POD force;
@@ -44,7 +44,7 @@ struct WrenchPOD {
 };
 
 /**
- * @brief Plain Old Data (POD) Pose layout matching geometry_msgs::Pose
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Tư thế Pose tương thích geometry_msgs::Pose
  */
 struct PosePOD {
     Vector3POD position;
@@ -52,7 +52,7 @@ struct PosePOD {
 };
 
 /**
- * @brief Plain Old Data (POD) Accel layout matching geometry_msgs::Accel
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Gia tốc Accel tương thích geometry_msgs::Accel
  */
 struct AccelPOD {
     Vector3POD linear;
@@ -60,7 +60,7 @@ struct AccelPOD {
 };
 
 /**
- * @brief Plain Old Data (POD) Odometry layout matching nav_msgs::Odometry
+ * @brief Cấu trúc dữ liệu thuần (POD) biểu diễn Odometry tương thích nav_msgs::Odometry
  */
 struct OdometryPOD {
     PosePOD pose;
@@ -70,38 +70,38 @@ struct OdometryPOD {
 #pragma pack(pop)
 
 /**
- * @brief ROS Adapter module providing seamless conversions between internal
- * nav_dynamics Eigen types and ROS-compatible POD structures without requiring
- * any ROS build dependencies.
+ * @brief Mô-đun ROS Adapter cung cấp khả năng chuyển đổi liền mạch giữa các kiểu dữ liệu
+ * Eigen nội bộ của nav_dynamics và các cấu trúc POD tương thích ROS mà không cần phụ thuộc
+ * vào bất kỳ gói cài đặt hay bản dựng ROS nào.
  */
 class RosAdapter {
 public:
-    // --- Twist (nu) Conversions ---
+    // --- Các hàm chuyển đổi Twist (nu) ---
     static TwistPOD to_twist_pod(const Vector6d& nu);
     static Vector6d from_twist_pod(const TwistPOD& pod);
 
-    // --- Wrench (tau) Conversions ---
+    // --- Các hàm chuyển đổi Wrench (tau) ---
     static WrenchPOD to_wrench_pod(const Vector6d& tau);
     static Vector6d from_wrench_pod(const WrenchPOD& pod);
 
-    // --- Pose Conversions ---
+    // --- Các hàm chuyển đổi Tư thế Pose ---
     static PosePOD to_pose_pod(const KinematicState& state);
     static void from_pose_pod(const PosePOD& pod, KinematicState& state);
 
-    // --- Accel (nu_dot) Conversions ---
+    // --- Các hàm chuyển đổi Gia tốc Accel (nu_dot) ---
     static AccelPOD to_accel_pod(const Vector6d& nu_dot);
     static Vector6d from_accel_pod(const AccelPOD& pod);
 
-    // --- Odometry Conversions ---
+    // --- Các hàm chuyển đổi Odometry ---
     static OdometryPOD to_odometry_pod(const KinematicState& state);
     static void from_odometry_pod(const OdometryPOD& pod, KinematicState& state);
 
-    // --- Flat Array Zero-Copy / Fast Memory Operations ---
+    // --- Các thao tác mảng phẳng nhanh / Zero-Copy ---
     static void to_flat_6d(const Vector6d& in, double* out_6d);
     static Vector6d from_flat_6d(const double* in_6d);
 
-    // --- Duck-Typed Templates for Direct ROS 1 / ROS 2 Message Mapping ---
-    // Usage in ROS node:
+    // --- Các template Duck-Typed ánh xạ trực tiếp sang thông điệp ROS 1 / ROS 2 ---
+    // Cách sử dụng trong nút ROS:
     //   nav_dynamics::RosAdapter::to_ros_twist(state.nu, ros_twist_msg);
     template <typename RosTwistMsg>
     static void to_ros_twist(const Vector6d& nu, RosTwistMsg& msg) {

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Git commit-msg hook for Enhence_DR project
+# Validates Conventional Commits format
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(head -n 1 "$COMMIT_MSG_FILE")
+
+# Allow merge commits, squash commits, and fixup commits
+if [[ "$COMMIT_MSG" =~ ^Merge ]] || [[ "$COMMIT_MSG" =~ ^fixup\! ]] || [[ "$COMMIT_MSG" =~ ^squash\! ]]; then
+    exit 0
+fi
+
+# Regex for Conventional Commits:
+# <type>(<scope>): <subject>
+# Allowed types: feat, fix, refactor, perf, test, docs, chore, ci, style, revert
+VALID_PATTERN="^(feat|fix|refactor|perf|test|docs|chore|ci|style|revert)\([a-zA-Z0-9_\-]+\): .+"
+
+if ! [[ "$COMMIT_MSG" =~ $VALID_PATTERN ]]; then
+    echo "❌ [ERROR] Commit message không đúng quy chuẩn Conventional Commits!"
+    echo "------------------------------------------------------------------"
+    echo "📌 Định dạng yêu cầu: <type>(<scope>): <subject>"
+    echo ""
+    echo "🔹 Allowed Types: feat | fix | refactor | perf | test | docs | chore | ci"
+    echo "🔹 Current Scopes (Dynamics):"
+    echo "    dynamics | dynamics-mass | dynamics-coriolis | dynamics-damping"
+    echo "    dynamics-restoring | dynamics-thruster | dynamics-dof | dynamics-solver | adapter"
+    echo "🔹 Upcoming Scopes (Fusion):"
+    echo "    fusion | fusion-filter | fusion-sync | fusion-fdi | fusion-omega-dot | fusion-vimu"
+    echo "🔹 Upcoming Scopes (Estimation):"
+    echo "    estimator | estimator-lie | estimator-inekf | estimator-eskf | estimator-predict | estimator-update | estimator-calib | estimator-constraint"
+    echo "🔹 General Scopes: driver | msgs | config | sim | core | test | ci | docs"
+    echo ""
+    echo "💡 Ví dụ hợp lệ:"
+    echo "   feat(dynamics-mass): calculate hydrodynamic added mass matrix"
+    echo "   fix(fusion-sync): resolve timestamp jitter between IMU1 and IMU5"
+    echo "   feat(estimator-inekf): implement SE_2(3) propagation step"
+    echo "------------------------------------------------------------------"
+    echo "Nội dung commit hiện tại:"
+    echo "   \"$COMMIT_MSG\""
+    exit 1
+fi
+
+# Check header length (max 72 characters)
+HEADER_LEN=${#COMMIT_MSG}
+if [ "$HEADER_LEN" -gt 72 ]; then
+    echo "⚠️  [WARNING] Dòng tiêu đề commit dài hơn 72 ký tự ($HEADER_LEN ký tự). Khuyến nghị rút gọn dưới 72 ký tự!"
+fi
+
+exit 0

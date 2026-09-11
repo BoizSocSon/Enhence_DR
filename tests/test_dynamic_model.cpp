@@ -9,14 +9,14 @@ int main() {
 
     nav_dynamics::VehicleParameters params;
     params.mass = 11.5;
-    params.volume = 11.5 / 1025.0; // neutral buoyancy
+    params.volume = 11.5 / 1025.0; // độ nổi trung tính
     params.set_linear_damping_diagonal(4.03, 6.22, 11.17, 0.07, 0.07, 0.07);
     params.set_quadratic_damping_diagonal(18.18, 21.66, 36.99, 1.55, 1.55, 1.55);
 
     nav_dynamics::DynamicModel model_6dof(params, nav_dynamics::DofConfig::make_6dof());
     nav_dynamics::DynamicModel model_3dof(params, nav_dynamics::DofConfig::make_rov_3dof());
 
-    // 1. Forward vs Inverse Dynamics Consistency
+    // 1. Kiểm tra tính nhất quán giữa Động lực học Thuận và Nghịch
     nav_dynamics::KinematicState state;
     state.nu << 0.8, -0.1, 0.3, 0.02, -0.01, 0.15;
     state.euler_rpy << 0.05, -0.02, 0.5;
@@ -25,40 +25,40 @@ int main() {
     nav_dynamics::Vector6d tau_in;
     tau_in << 25.0, 5.0, -10.0, 0.5, -1.0, 3.0;
 
-    // Forward dynamics -> acceleration
+    // Động lực học thuận -> tính gia tốc
     nav_dynamics::Vector6d acc = model_6dof.compute_forward_dynamics_6d(state, tau_in);
 
-    // Inverse dynamics -> recovered wrench
+    // Động lực học nghịch -> tái tạo lực điều khiển (wrench)
     nav_dynamics::Vector6d tau_recovered = model_6dof.compute_inverse_dynamics(state, acc);
     NAV_TEST_ASSERT(tau_in.isApprox(tau_recovered, 1e-9), "Inverse dynamics must match forward dynamics!");
 
-    // 2. Dynamic Breakdown consistency
+    // 2. Tính nhất quán của thành phần lực chi tiết (Dynamic Breakdown)
     nav_dynamics::DynamicBreakdown bd = model_6dof.evaluate_breakdown(state, tau_in);
     NAV_TEST_ASSERT(bd.acceleration_6d.isApprox(acc, 1e-9), "Breakdown acceleration must match!");
     nav_dynamics::Vector6d net_recomputed = tau_in - bd.coriolis_force - bd.damping_force - bd.restoring_force;
     NAV_TEST_ASSERT(bd.net_wrench.isApprox(net_recomputed, 1e-9), "Net wrench mismatch!");
 
-    // 3. Thruster Allocation Consistency (TL, TR, TV)
+    // 3. Tính nhất quán của bài toán phân bổ lực đẩy (TL, TR, TV)
     auto thruster_alloc = nav_dynamics::ThrusterAllocation::make_project_rov_3thruster(0.15, 0.12, 0.0);
     nav_dynamics::VectorNd thrusts(3);
     thrusts << 15.0, 12.0, -8.0; // TL, TR, TV
     nav_dynamics::Vector6d tau_thrust = thruster_alloc.forward_allocation(thrusts);
 
-    // Inverse allocation for 3-DOF ROV
+    // Phân bổ nghịch cho ROV 3-DOF
     auto cfg_3dof = nav_dynamics::DofConfig::make_rov_3dof();
     nav_dynamics::VectorNd tau_3dof = cfg_3dof.reduce_vector(tau_thrust);
     nav_dynamics::VectorNd thrusts_recovered = thruster_alloc.inverse_allocation_reduced(cfg_3dof, tau_3dof);
     NAV_TEST_ASSERT(thrusts.isApprox(thrusts_recovered, 1e-6), "Inverse thruster allocation failed!");
 
-    // 4. Numerical Integration (RK4) towards Terminal Velocity in 3-DOF ROV mode
-    // Apply constant surge thrust tau_x = 20 N from rest.
-    // Theoretical terminal velocity: 18.18 * u^2 + 4.03 * u - 20 = 0 -> u_term ~ 0.9439 m/s
+    // 4. Tích phân số (RK4) tiến tới vận tốc giới hạn trong chế độ ROV 3-DOF
+    // Tác dụng lực đẩy tiến không đổi tau_x = 20 N từ trạng thái đứng yên.
+    // Vận tốc giới hạn lý thuyết: 18.18 * u^2 + 4.03 * u - 20 = 0 -> u_term ~ 0.9439 m/s
     nav_dynamics::KinematicState sim_state;
     nav_dynamics::Vector6d tau_step = nav_dynamics::Vector6d::Zero();
-    tau_step(0) = 20.0; // 20 N surge thrust
+    tau_step(0) = 20.0; // Lực đẩy tiến 20 N
 
     double dt = 0.01;
-    for (int step = 0; step < 1000; ++step) { // simulate 10 seconds
+    for (int step = 0; step < 1000; ++step) { // mô phỏng 10 giây
         model_3dof.step_rk4(sim_state, tau_step, dt);
     }
 
@@ -66,7 +66,7 @@ int main() {
     double u_expected = (-4.03 + std::sqrt(4.03 * 4.03 + 4.0 * 18.18 * 20.0)) / (2.0 * 18.18);
     NAV_TEST_ASSERT(std::abs(u_final - u_expected) < 0.01, "RK4 simulation failed to reach expected terminal velocity!");
 
-    // 5. ROS Adapter POD Conversions
+    // 5. Kiểm tra chuyển đổi dữ liệu ROS Adapter POD
     nav_dynamics::TwistPOD twist_pod = nav_dynamics::RosAdapter::to_twist_pod(sim_state.nu);
     NAV_TEST_ASSERT(std::abs(twist_pod.linear.x - sim_state.nu(0)) < 1e-9, "TwistPOD mismatch!");
     nav_dynamics::Vector6d nu_from_pod = nav_dynamics::RosAdapter::from_twist_pod(twist_pod);
@@ -82,7 +82,7 @@ int main() {
     NAV_TEST_ASSERT(state_from_odom.pos_ned.isApprox(sim_state.pos_ned, 1e-9), "Odom pos mismatch!");
     NAV_TEST_ASSERT(state_from_odom.nu.isApprox(sim_state.nu, 1e-9), "Odom nu mismatch!");
 
-    // Flat array copy
+    // Sao chép mảng phẳng (Flat array)
     double raw_buf[6];
     nav_dynamics::RosAdapter::to_flat_6d(sim_state.nu, raw_buf);
     nav_dynamics::Vector6d nu_from_flat = nav_dynamics::RosAdapter::from_flat_6d(raw_buf);

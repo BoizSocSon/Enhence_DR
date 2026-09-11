@@ -16,7 +16,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
 
     RovConfig config;
 
-    // --- 1. Vehicle Rigid-Body Parameters ---
+    // --- 1. Các thông số vật rắn của phương tiện ---
     if (root["vehicle"]) {
         auto v_node = root["vehicle"];
         if (v_node["name"]) config.vehicle_name = v_node["name"].as<std::string>();
@@ -48,7 +48,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
         }
     }
 
-    // --- 2. Hydrodynamic Parameters ---
+    // --- 2. Các thông số thủy động học ---
     if (root["hydrodynamics"]) {
         auto h_node = root["hydrodynamics"];
 
@@ -86,7 +86,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
         }
     }
 
-    // --- 3. ArduSub Parameters & Thrusters ---
+    // --- 3. Các thông số ArduSub & Động cơ đẩy ---
     std::vector<ThrusterUnit> thrusters;
     if (root["ardusub"]) {
         auto a_node = root["ardusub"];
@@ -139,7 +139,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
         config.thruster_allocation = ThrusterAllocation::make_project_rov_3thruster();
     }
 
-    // --- 4. Degree of Freedom Configuration ---
+    // --- 4. Cấu hình bậc tự do (DOF) ---
     if (root["dof_config"]) {
         auto dof_node = root["dof_config"];
         if (dof_node["active_dofs"] && dof_node["active_dofs"].IsSequence()) {
@@ -166,7 +166,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
         config.dof_transformer = DofTransformer::make_rov_3dof();
     }
 
-    // --- 5. NED Environment Parameters ---
+    // --- 5. Các thông số môi trường NED ---
     if (root["ned_environment"]) {
         auto n_node = root["ned_environment"];
         if (n_node["gravity"]) {
@@ -193,7 +193,7 @@ void ConfigLoader::save_to_yaml(const RovConfig& config, const std::string& file
     YAML::Emitter out;
     out << YAML::BeginMap;
 
-    // Vehicle
+    // Thông tin phương tiện
     out << YAML::Key << "vehicle" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "name" << YAML::Value << config.vehicle_name;
     out << YAML::Key << "mass" << YAML::Value << config.vehicle_params.mass;

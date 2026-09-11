@@ -55,15 +55,15 @@ Vector6d DynamicModel::compute_forward_dynamics_6d(const KinematicState& state,
     Vector6d nu = state.nu;
     Vector6d nu_r = current.compute_relative_velocity(state);
 
-    // Forces in body frame
+    // Các lực trong hệ quy chiếu thân tàu
     Vector6d f_coriolis = coriolis_evaluator_.compute_coriolis_force(nu, nu_r);
     Vector6d f_damping = damping_evaluator_.compute_damping_force(nu_r);
     Vector6d f_restoring = restoring_evaluator_.compute_g_state(state);
 
-    // Net wrench = tau - C*nu - D*nu_r - g
+    // Lực tổng hợp tác dụng = tau - C*nu - D*nu_r - g
     Vector6d net_wrench = tau - f_coriolis - f_damping - f_restoring;
 
-    // Acceleration nu_dot = M^{-1} * net_wrench
+    // Gia tốc nu_dot = M^{-1} * net_wrench
     return mass_evaluator_.solve(net_wrench);
 }
 
@@ -73,7 +73,7 @@ VectorNd DynamicModel::compute_forward_dynamics_reduced(const KinematicState& st
     Vector6d nu = state.nu;
     Vector6d nu_r = current.compute_relative_velocity(state);
 
-    // Evaluate full forces then transform with T matrix
+    // Tính toán đầy đủ các lực rồi biến đổi bằng ma trận T
     Vector6d f_coriolis = coriolis_evaluator_.compute_coriolis_force(nu, nu_r);
     Vector6d f_damping = damping_evaluator_.compute_damping_force(nu_r);
     Vector6d f_restoring = restoring_evaluator_.compute_g_state(state);
@@ -84,10 +84,10 @@ VectorNd DynamicModel::compute_forward_dynamics_reduced(const KinematicState& st
 
     VectorNd net_wrench_r = tau_r - f_coriolis_r - f_damping_r - f_restoring_r;
 
-    // Reduced mass matrix: M_r = T * M * T^T
+    // Ma trận khối lượng thu giảm: M_r = T * M * T^T
     MatrixNd M_r = transformer_.transform_mass(mass_evaluator_.M_total());
 
-    // Solve M_r * nu_dot_r = net_wrench_r using Cholesky decomposition
+    // Giải hệ phương trình M_r * nu_dot_r = net_wrench_r bằng phân rã Cholesky
     Eigen::LLT<MatrixNd> llt(M_r);
     if (llt.info() == Eigen::Success) {
         return llt.solve(net_wrench_r);
@@ -101,7 +101,7 @@ Vector6d DynamicModel::compute_forward_dynamics(const KinematicState& state,
     if (transformer_.reduced_dim() == 6) {
         return compute_forward_dynamics_6d(state, tau, current);
     }
-    // Reduced space computation via DofTransformer
+    // Tính toán trong không gian thu giảm thông qua DofTransformer
     VectorNd tau_r = transformer_.transform_wrench(tau);
     VectorNd nu_dot_r = compute_forward_dynamics_reduced(state, tau_r, current);
     return transformer_.expand_vector(nu_dot_r, Vector6d::Zero());
@@ -146,11 +146,11 @@ Vector6d DynamicModel::compute_inverse_dynamics(const KinematicState& state,
 }
 
 static void propagate_kinematics(KinematicState& state, double dt) {
-    // 1. Position update: dot_p_ned = R_nb * v_b
+    // 1. Cập nhật vị trí: dot_p_ned = R_nb * v_b
     Vector3d v_body = state.nu.head<3>();
     state.pos_ned += state.R_nb() * v_body * dt;
 
-    // 2. Quaternion update: dq = q * exp(0.5 * omega * dt)
+    // 2. Cập nhật quaternion định hướng: dq = q * exp(0.5 * omega * dt)
     Vector3d omega_body = state.nu.tail<3>();
     double angle = omega_body.norm() * dt;
     if (angle > 1e-12) {
@@ -176,7 +176,7 @@ void DynamicModel::step_rk4(KinematicState& state,
                            const Vector6d& tau,
                            double dt,
                            const FluidCurrent& current) const {
-    // RK4 for velocity propagation
+    // Tích phân RK4 để truyền lan vận tốc
     KinematicState s = state;
 
     // k1
@@ -200,12 +200,12 @@ void DynamicModel::step_rk4(KinematicState& state,
     propagate_kinematics(s_full, dt);
     Vector6d k4_nu = compute_forward_dynamics(s_full, tau, current);
 
-    // Weighted combination for velocity
+    // Tổ hợp trọng số gia tốc cho vận tốc
     Vector6d nu_dot_avg = (k1_nu + 2.0 * k2_nu + 2.0 * k3_nu + k4_nu) / 6.0;
     state.nu_dot = nu_dot_avg;
     state.nu += nu_dot_avg * dt;
 
-    // Kinematics propagation
+    // Truyền lan động học vị trí và tư thế
     propagate_kinematics(state, dt);
 }
 

@@ -107,3 +107,13 @@ Kết quả:
 ```bash
 ./examples/rov_simulation_example
 ```
+
+---
+
+## 5. Quy Chuẩn Phát Triển & Quản Lý Mã Nguồn (Git Conventions)
+
+Dự án áp dụng chặt chẽ quy chuẩn **Conventional Commits** và chiến lược phân nhánh **Feature Branching**:
+- 📖 **Tài liệu chi tiết**: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
+- 📝 **Commit Message Template**: [`.gitmessage`](.gitmessage)
+- 🔀 **Pull Request Template**: [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
+- 🪝 **Tự động kiểm tra cú pháp commit**: Cài đặt hook bằng lệnh `git config core.hooksPath .githooks`

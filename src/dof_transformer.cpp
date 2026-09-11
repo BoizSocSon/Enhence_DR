@@ -132,6 +132,7 @@ Vector6d DofTransformer::expand_vector(const VectorNd& v_r,
     if (static_cast<size_t>(v_r.size()) != reduced_dim_) {
         throw std::invalid_argument("DofTransformer::expand_vector: dimension mismatch!");
     }
+    // Mở rộng về 6D và bù trừ các bậc tự do bị ràng buộc:
     // v_6d = T^T * v_r + (I_6 - T^T * T) * constrained_vals
     Matrix6d I_6 = Matrix6d::Identity();
     Matrix6d null_projector = I_6 - (T_.transpose() * T_);

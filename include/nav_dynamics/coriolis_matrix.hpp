@@ -6,44 +6,44 @@
 namespace nav_dynamics {
 
 /**
- * @brief Computes the Coriolis-Centripetal matrix C(nu) = C_RB(nu) + C_A(nu_r)
- * strictly formatted in skew-symmetric representation (C = -C^T, nu^T * C * nu = 0).
+ * @brief Tính toán ma trận Coriolis - Hướng tâm C(nu) = C_RB(nu) + C_A(nu_r)
+ * được định dạng chặt chẽ theo biểu diễn phản đối xứng (C = -C^T, nu^T * C * nu = 0).
  */
 class CoriolisMatrixEvaluator {
 public:
     CoriolisMatrixEvaluator() = default;
     explicit CoriolisMatrixEvaluator(const VehicleParameters& params);
 
-    /// Set vehicle parameters
+    /// Cài đặt các thông số phương tiện
     void set_parameters(const VehicleParameters& params);
 
-    /// Compute 6x6 Rigid-Body Coriolis matrix C_RB(nu)
+    /// Tính ma trận Coriolis vật rắn 6x6 C_RB(nu)
     [[nodiscard]] Matrix6d compute_C_RB(const Vector6d& nu) const;
 
-    /// Compute 6x6 Added Mass Coriolis matrix C_A(nu_r)
+    /// Tính ma trận Coriolis khối lượng gia tăng 6x6 C_A(nu_r)
     [[nodiscard]] Matrix6d compute_C_A(const Vector6d& nu_r) const;
 
-    /// Compute 6x6 Total Coriolis matrix C(nu, nu_r) = C_RB(nu) + C_A(nu_r)
+    /// Tính ma trận Coriolis tổng 6x6 C(nu, nu_r) = C_RB(nu) + C_A(nu_r)
     [[nodiscard]] Matrix6d compute_C(const Vector6d& nu, const Vector6d& nu_r) const;
 
-    /// Compute total Coriolis force vector tau_C = C_RB(nu)*nu + C_A(nu_r)*nu_r
+    /// Tính véc-tơ lực Coriolis tổng tau_C = C_RB(nu)*nu + C_A(nu_r)*nu_r
     [[nodiscard]] Vector6d compute_coriolis_force(const Vector6d& nu, const Vector6d& nu_r) const;
 
-    /// Compute reduced n x n Coriolis matrix for a given DOF configuration
+    /// Tính ma trận Coriolis thu giảm n x n cho cấu hình DOF đã cho
     [[nodiscard]] MatrixNd compute_reduced(const DofConfig& config,
                                           const Vector6d& nu,
                                           const Vector6d& nu_r) const;
 
-    /// Compute reduced n x 1 Coriolis force vector for a given DOF configuration
+    /// Tính véc-tơ lực Coriolis thu giảm n x 1 cho cấu hình DOF đã cho
     [[nodiscard]] VectorNd compute_coriolis_force_reduced(const DofConfig& config,
                                                          const Vector6d& nu,
                                                          const Vector6d& nu_r) const;
 
-    /// Static calculation of C_RB from mass, r_G, I_b, and velocity
+    /// Hàm tĩnh tính toán C_RB từ khối lượng, r_G, I_b và vận tốc
     static Matrix6d calculate_C_RB(double mass, const Vector3d& r_G,
                                    const Matrix3d& I_b, const Vector6d& nu);
 
-    /// Static calculation of C_A from M_A and relative velocity
+    /// Hàm tĩnh tính toán C_A từ M_A và vận tốc tương đối
     static Matrix6d calculate_C_A(const Matrix6d& M_A, const Vector6d& nu_r);
 
 private:

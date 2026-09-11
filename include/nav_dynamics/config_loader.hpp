@@ -10,17 +10,17 @@
 namespace nav_dynamics {
 
 /**
- * @brief Global NED environment parameters
+ * @brief Các thông số môi trường toàn cục trong hệ quy chiếu NED
  */
 struct NedEnvironment {
-    double gravity = 9.80665;                          ///< Gravity acceleration [m/s^2] (+z down)
-    double fluid_density = 1025.0;                     ///< Water density [kg/m^3] (seawater ~1025, freshwater ~1000)
-    double surface_atmospheric_pressure = 101325.0;    ///< Atmospheric pressure at water surface [Pa]
-    Vector3d nominal_ocean_current = Vector3d::Zero(); ///< Current velocity in NED frame [m/s]
+    double gravity = 9.80665;                          ///< Gia tốc trọng trường [m/s^2] (+z hướng xuống)
+    double fluid_density = 1025.0;                     ///< Khối lượng riêng của nước [kg/m^3] (nước biển ~1025, nước ngọt ~1000)
+    double surface_atmospheric_pressure = 101325.0;    ///< Áp suất khí quyển tại mặt nước [Pa]
+    Vector3d nominal_ocean_current = Vector3d::Zero(); ///< Vận tốc dòng chảy trong hệ quy chiếu NED [m/s]
 };
 
 /**
- * @brief ArduSub specific parameters (AP_Motors6DOF & Multi-IMU lever arms)
+ * @brief Các thông số đặc thù của ArduSub (AP_Motors6DOF & cánh tay đòn các IMU)
  */
 struct ArduSubConfig {
     std::string frame_type = "CUSTOM_3THRUSTER";
@@ -29,12 +29,12 @@ struct ArduSubConfig {
     double pwm_trim = 1500.0;
     double pwm_deadband = 25.0;
 
-    /// Lever arm vectors of up to 5 IMUs relative to CoM in body frame [m]
+    /// Các véc-tơ cánh tay đòn của tối đa 5 IMU tương đối so với CoM trong hệ thân tàu [m]
     std::map<std::string, Vector3d> imu_lever_arms;
 };
 
 /**
- * @brief Complete loaded ROV configuration container
+ * @brief Cấu trúc chứa toàn bộ cấu hình đã nạp của ROV
  */
 struct RovConfig {
     std::string vehicle_name = "Custom_Team_ROV";
@@ -46,15 +46,15 @@ struct RovConfig {
 };
 
 /**
- * @brief Configuration loader that parses YAML files (such as rov_params.yaml)
- * and populates ROV physical parameters, ArduSub settings, and DOF transformer.
+ * @brief Bộ nạp cấu hình phân tích cú pháp tệp YAML (như rov_params.yaml)
+ * và điền các thông số vật lý của ROV, cài đặt ArduSub, và bộ biến đổi bậc tự do (DOF transformer).
  */
 class ConfigLoader {
 public:
-    /// Load entire ROV configuration from a YAML file
+    /// Nạp toàn bộ cấu hình ROV từ một tệp YAML
     static RovConfig load_from_yaml(const std::string& filepath);
 
-    /// Save ROV configuration to a YAML file
+    /// Lưu cấu hình ROV ra một tệp YAML
     static void save_to_yaml(const RovConfig& config, const std::string& filepath);
 };
 

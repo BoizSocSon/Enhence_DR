@@ -15,24 +15,24 @@ Vector6d RestoringForceEvaluator::calculate_g(double mass, double volume, double
     double W = mass * g_acc;
     double B = fluid_density * g_acc * volume;
 
-    // Gravity vector in NED: [0, 0, W]^T
+    // Véc-tơ trọng lực trong hệ NED: [0, 0, W]^T
     Vector3d f_g_ned(0.0, 0.0, W);
-    // Buoyancy vector in NED: [0, 0, -B]^T
+    // Véc-tơ lực nổi trong hệ NED: [0, 0, -B]^T
     Vector3d f_b_ned(0.0, 0.0, -B);
 
-    // Transform to body frame: f_b = R_nb^T * f_n
+    // Biến đổi sang hệ thân tàu: f_b = R_nb^T * f_n
     Matrix3d R_bn = R_nb.transpose();
     Vector3d f_g_body = R_bn * f_g_ned;
     Vector3d f_b_body = R_bn * f_b_ned;
 
-    // Total hydrostatic force in body frame
+    // Tổng lực thủy tĩnh trong hệ thân tàu
     Vector3d f_hydro_body = f_g_body + f_b_body;
 
-    // Total hydrostatic moment in body frame
+    // Tổng mô-men thủy tĩnh trong hệ thân tàu
     Vector3d m_hydro_body = r_G.cross(f_g_body) + r_B.cross(f_b_body);
 
-    // In equations of motion: M*nu_dot + ... + g(eta) = tau
-    // Therefore g(eta) = - [f_hydro_body; m_hydro_body]
+    // Trong phương trình chuyển động: M*nu_dot + ... + g(eta) = tau
+    // Do đó g(eta) = - [f_hydro_body; m_hydro_body]
     Vector6d g;
     g.head<3>() = -f_hydro_body;
     g.tail<3>() = -m_hydro_body;

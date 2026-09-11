@@ -12,12 +12,12 @@ double ThrusterUnit::pwm_to_thrust(double pwm) const {
         return 0.0;
     }
     if (diff > 0.0) {
-        // Forward: normalized 0..1 over (400 - deadband)
+        // Chiều tiến: chuẩn hóa 0..1 trên dải (400 - deadband)
         double ratio = (diff - deadband_pwm) / (400.0 - deadband_pwm);
         ratio = std::clamp(ratio, 0.0, 1.0);
-        return max_thrust_fwd * (ratio * ratio); // quadratic thrust curve
+        return max_thrust_fwd * (ratio * ratio); // đường cong đặc tính lực đẩy bậc hai
     } else {
-        // Reverse
+        // Chiều lùi
         double ratio = (-diff - deadband_pwm) / (400.0 - deadband_pwm);
         ratio = std::clamp(ratio, 0.0, 1.0);
         return -max_thrust_rev * (ratio * ratio);
@@ -61,7 +61,7 @@ void ThrusterAllocation::rebuild_allocation_matrix() {
         B_.col(j) = thrusters_[j].wrench_column();
     }
 
-    // Moore-Penrose pseudo-inverse using CompleteOrthogonalDecomposition / SVD
+    // Ma trận giả nghịch đảo Moore-Penrose sử dụng CompleteOrthogonalDecomposition / SVD
     B_pinv_ = B_.completeOrthogonalDecomposition().pseudoInverse();
 }
 
@@ -82,7 +82,7 @@ VectorNd ThrusterAllocation::inverse_allocation(const Vector6d& desired_tau) con
 }
 
 VectorNd ThrusterAllocation::inverse_allocation_reduced(const DofConfig& config, const VectorNd& desired_tau_r) const {
-    // Project allocation matrix into reduced space: B_r = P * B (n x k)
+    // Chiếu ma trận phân bổ vào không gian thu giảm: B_r = P * B (n x k)
     MatrixNd B_r = config.projection_matrix() * B_;
     MatrixNd B_r_pinv = B_r.completeOrthogonalDecomposition().pseudoInverse();
     return B_r_pinv * desired_tau_r;
@@ -115,20 +115,20 @@ VectorNd ThrusterAllocation::thrusts_to_pwm(const VectorNd& thrusts) const {
 ThrusterAllocation ThrusterAllocation::make_project_rov_3thruster(double l_x, double d_y, double z_t) {
     std::vector<ThrusterUnit> thrusters(3);
 
-    // Left horizontal thruster (TL)
+    // Động cơ đẩy ngang bên trái (TL)
     thrusters[0].name = "thruster_left";
     thrusters[0].position_body = Vector3d(-l_x, -d_y, 0.0);
-    thrusters[0].direction_body = Vector3d(1.0, 0.0, 0.0); // pushes +x
+    thrusters[0].direction_body = Vector3d(1.0, 0.0, 0.0); // đẩy theo hướng +x (tiến)
 
-    // Right horizontal thruster (TR)
+    // Động cơ đẩy ngang bên phải (TR)
     thrusters[1].name = "thruster_right";
     thrusters[1].position_body = Vector3d(-l_x, d_y, 0.0);
-    thrusters[1].direction_body = Vector3d(1.0, 0.0, 0.0); // pushes +x
+    thrusters[1].direction_body = Vector3d(1.0, 0.0, 0.0); // đẩy theo hướng +x (tiến)
 
-    // Vertical thruster (TV)
+    // Động cơ đẩy thẳng đứng (TV)
     thrusters[2].name = "thruster_vertical";
     thrusters[2].position_body = Vector3d(0.0, 0.0, z_t);
-    thrusters[2].direction_body = Vector3d(0.0, 0.0, -1.0); // pushes -z (upwards)
+    thrusters[2].direction_body = Vector3d(0.0, 0.0, -1.0); // đẩy theo hướng -z (hướng lên trên)
 
     return ThrusterAllocation(thrusters);
 }

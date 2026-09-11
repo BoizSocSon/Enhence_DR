@@ -11,23 +11,23 @@ void CoriolisMatrixEvaluator::set_parameters(const VehicleParameters& params) {
 
 Matrix6d CoriolisMatrixEvaluator::calculate_C_RB(double mass, const Vector3d& r_G,
                                                  const Matrix3d& I_b, const Vector6d& nu) {
-    Vector3d nu1 = nu.head<3>(); // [u, v, w]^T
-    Vector3d nu2 = nu.tail<3>(); // [p, q, r]^T
+    Vector3d nu1 = nu.head<3>(); // Vận tốc tịnh tiến [u, v, w]^T
+    Vector3d nu2 = nu.tail<3>(); // Vận tốc góc [p, q, r]^T
 
     // a = nu1 + nu2 x r_G
     Vector3d a = nu1 + nu2.cross(r_G);
 
-    // Skew matrices
+    // Các ma trận phản đối xứng
     Matrix3d s_a = skew(a);
     Matrix3d s_Ib_nu2 = skew(I_b * nu2);
 
     Matrix6d C_rb = Matrix6d::Zero();
-    // Top-left: 0_3x3
-    // Top-right: -m * [a]_\times
+    // Khối trên-trái: 0_3x3
+    // Khối trên-phải: -m * [a]_\times
     C_rb.block<3, 3>(0, 3) = -mass * s_a;
-    // Bottom-left: -m * [a]_\times
+    // Khối dưới-trái: -m * [a]_\times
     C_rb.block<3, 3>(3, 0) = -mass * s_a;
-    // Bottom-right: -[I_b * nu2]_\times
+    // Khối dưới-phải: -[I_b * nu2]_\times
     C_rb.block<3, 3>(3, 3) = -s_Ib_nu2;
 
     return C_rb;
@@ -42,12 +42,12 @@ Matrix6d CoriolisMatrixEvaluator::calculate_C_A(const Matrix6d& M_A, const Vecto
     Matrix3d s_a2 = skew(a2);
 
     Matrix6d C_a = Matrix6d::Zero();
-    // Top-left: 0_3x3
-    // Top-right: -[a1]_\times
+    // Khối trên-trái: 0_3x3
+    // Khối trên-phải: -[a1]_\times
     C_a.block<3, 3>(0, 3) = -s_a1;
-    // Bottom-left: -[a1]_\times
+    // Khối dưới-trái: -[a1]_\times
     C_a.block<3, 3>(3, 0) = -s_a1;
-    // Bottom-right: -[a2]_\times
+    // Khối dưới-phải: -[a2]_\times
     C_a.block<3, 3>(3, 3) = -s_a2;
 
     return C_a;

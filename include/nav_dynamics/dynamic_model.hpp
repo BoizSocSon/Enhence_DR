@@ -14,20 +14,20 @@ namespace nav_dynamics {
 struct RovConfig;
 
 /**
- * @brief Detailed breakdown of all forces and moments in the equation of motion
+ * @brief Chi tiết phân tách toàn bộ các thành phần lực và mô-men trong phương trình chuyển động
  */
 struct DynamicBreakdown {
-    Vector6d control_wrench = Vector6d::Zero();   ///< Control wrench tau
-    Vector6d coriolis_force = Vector6d::Zero();    ///< Coriolis-centripetal force C(nu)*nu
-    Vector6d damping_force = Vector6d::Zero();     ///< Hydrodynamic damping force D(nu_r)*nu_r
-    Vector6d restoring_force = Vector6d::Zero();   ///< Hydrostatic restoring force g(eta)
-    Vector6d net_wrench = Vector6d::Zero();        ///< tau - C - D - g
-    Vector6d acceleration_6d = Vector6d::Zero();   ///< nu_dot in body frame
+    Vector6d control_wrench = Vector6d::Zero();   ///< Lực và mô-men điều khiển tau
+    Vector6d coriolis_force = Vector6d::Zero();    ///< Lực Coriolis - hướng tâm C(nu)*nu
+    Vector6d damping_force = Vector6d::Zero();     ///< Lực cản thủy động học D(nu_r)*nu_r
+    Vector6d restoring_force = Vector6d::Zero();   ///< Lực và mô-men hồi phục thủy tĩnh g(eta)
+    Vector6d net_wrench = Vector6d::Zero();        ///< Lực tổng hợp tác dụng = tau - C - D - g
+    Vector6d acceleration_6d = Vector6d::Zero();   ///< Gia tốc nu_dot trong hệ thân tàu
 };
 
 /**
- * @brief Main Dynamic Model computation engine integrating all matrix components
- * (M, C, D, g, B) with full 6-DOF support and configurable DOF reduction via DofTransformer.
+ * @brief Động cơ tính toán Mô hình Động lực học chính tích hợp toàn bộ các thành phần ma trận
+ * (M, C, D, g, B) với hỗ trợ đầy đủ 6-DOF và khả năng cấu hình thu giảm bậc tự do qua DofTransformer.
  */
 class DynamicModel {
 public:
@@ -36,69 +36,69 @@ public:
                           const DofTransformer& transformer = DofTransformer::make_6dof(),
                           const ThrusterAllocation& thrusters = ThrusterAllocation::make_project_rov_3thruster());
     
-    // Backward compatibility constructor with DofConfig
+    // Hàm khởi tạo tương thích ngược với DofConfig
     explicit DynamicModel(const VehicleParameters& params,
                           const DofConfig& dof_config,
                           const ThrusterAllocation& thrusters = ThrusterAllocation::make_project_rov_3thruster());
 
-    /// Reconfigure active DOFs using dedicated DofTransformer
+    /// Tái cấu hình các bậc tự do hoạt động sử dụng DofTransformer chuyên dụng
     void set_dof_transformer(const DofTransformer& transformer);
 
-    /// Get current DOF transformer
+    /// Lấy bộ biến đổi DOF hiện tại
     [[nodiscard]] const DofTransformer& dof_transformer() const { return transformer_; }
 
-    // Backward compatibility methods for dof_config
+    // Các phương thức tương thích ngược cho dof_config
     void set_dof_config(const DofConfig& dof_config);
     [[nodiscard]] const DofConfig& dof_config() const { return dof_config_; }
 
-    /// Update vehicle physical parameters
+    /// Cập nhật các thông số vật lý của phương tiện
     void set_parameters(const VehicleParameters& params);
 
-    /// Get vehicle parameters
+    /// Lấy các thông số của phương tiện
     [[nodiscard]] const VehicleParameters& parameters() const { return params_; }
 
-    /// Access individual matrix evaluators
+    /// Truy cập các bộ tính toán ma trận thành phần
     [[nodiscard]] const MassMatrixEvaluator& mass_evaluator() const { return mass_evaluator_; }
     [[nodiscard]] const CoriolisMatrixEvaluator& coriolis_evaluator() const { return coriolis_evaluator_; }
     [[nodiscard]] const DampingMatrixEvaluator& damping_evaluator() const { return damping_evaluator_; }
     [[nodiscard]] const RestoringForceEvaluator& restoring_evaluator() const { return restoring_evaluator_; }
     [[nodiscard]] const ThrusterAllocation& thruster_allocation() const { return thruster_allocation_; }
 
-    /// Forward Dynamics (Full 6D):
-    /// Computes body acceleration nu_dot = M^{-1} * (tau - C(nu)*nu - D(nu_r)*nu_r - g(eta))
+    /// Động lực học thuận (6D đầy đủ):
+    /// Tính gia tốc trong hệ thân tàu nu_dot = M^{-1} * (tau - C(nu)*nu - D(nu_r)*nu_r - g(eta))
     [[nodiscard]] Vector6d compute_forward_dynamics_6d(const KinematicState& state,
                                                        const Vector6d& tau,
                                                        const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Forward Dynamics using current DOF configuration:
-    /// Solves on reduced n-DOF space if configured (via DofTransformer), then expands to 6D
+    /// Động lực học thuận theo cấu hình DOF hiện tại:
+    /// Giải trên không gian thu giảm n-DOF nếu được cấu hình (qua DofTransformer), sau đó mở rộng về 6D
     [[nodiscard]] Vector6d compute_forward_dynamics(const KinematicState& state,
                                                     const Vector6d& tau,
                                                     const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Compute forward dynamics directly in reduced n-DOF space
+    /// Tính động lực học thuận trực tiếp trong không gian thu giảm n-DOF
     [[nodiscard]] VectorNd compute_forward_dynamics_reduced(const KinematicState& state,
                                                             const VectorNd& tau_r,
                                                             const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Detailed breakdown of all dynamic components
+    /// Phân tích chi tiết tất cả các thành phần lực động lực học
     [[nodiscard]] DynamicBreakdown evaluate_breakdown(const KinematicState& state,
                                                      const Vector6d& tau,
                                                      const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Inverse Dynamics:
-    /// Computes required wrench tau = M*nu_dot + C(nu)*nu + D(nu_r)*nu_r + g(eta)
+    /// Động lực học nghịch:
+    /// Tính lực điều khiển cần thiết tau = M*nu_dot + C(nu)*nu + D(nu_r)*nu_r + g(eta)
     [[nodiscard]] Vector6d compute_inverse_dynamics(const KinematicState& state,
                                                     const Vector6d& nu_dot,
                                                     const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Numerical integration: 1 step of Euler integration
+    /// Tích phân số: 1 bước tích phân Euler
     void step_euler(KinematicState& state,
                     const Vector6d& tau,
                     double dt,
                     const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Numerical integration: 1 step of 4th-order Runge-Kutta (RK4) integration
+    /// Tích phân số: 1 bước tích phân Runge-Kutta bậc 4 (RK4)
     void step_rk4(KinematicState& state,
                   const Vector6d& tau,
                   double dt,

@@ -1,16 +1,16 @@
 # ==============================================================================
-# ROV Physical & Hydrodynamic Configuration
-# Compatible with ArduSub Parameters & Fossen 6-DOF Dynamics
+# Cấu hình Vật lý & Thủy động lực học của ROV
+# Tương thích với các thông số ArduSub & Động lực học 6-DOF Fossen
 # ==============================================================================
 
-# --- 1. Vehicle Rigid-Body Parameters (Body-fixed Frame) ---
+# --- 1. Các thông số vật rắn của phương tiện (Hệ quy chiếu thân tàu Body-fixed) ---
 vehicle:
   name: "Custom_Team_ROV"
-  mass: 11.5                            # Dry vehicle mass [kg]
-  volume: 0.0116                        # Displaced water volume [m^3] (~11.89 kg buoyant in seawater)
-  center_of_gravity: [0.0, 0.0, 0.02]   # r_G = [x_G, y_G, z_G] in Body frame [m] (CoG slightly below origin)
-  center_of_buoyancy: [0.0, 0.0, -0.02] # r_B = [x_B, y_B, z_B] in Body frame [m] (CoB slightly above origin)
-  inertia_tensor:                       # Rigid-body moment of inertia [kg*m^2]
+  mass: 11.5                            # Khối lượng khô của phương tiện [kg]
+  volume: 0.0116                        # Thể tích nước chiếm chỗ [m^3] (~11.89 kg sức nổi trong nước biển)
+  center_of_gravity: [0.0, 0.0, 0.02]   # r_G = [x_G, y_G, z_G] trong hệ thân tàu [m] (Trọng tâm CoG hơi thấp hơn gốc tọa độ)
+  center_of_buoyancy: [0.0, 0.0, -0.02] # r_B = [x_B, y_B, z_B] trong hệ thân tàu [m] (Tâm nổi CoB hơi cao hơn gốc tọa độ)
+  inertia_tensor:                       # Mô-men quán tính vật rắn [kg*m^2]
     Ixx: 0.16
     Iyy: 0.35
     Izz: 0.35
@@ -18,19 +18,19 @@ vehicle:
     Ixz: 0.0
     Iyz: 0.0
 
-# --- 2. Hydrodynamic Derivatives (Fossen Marine Craft Standard) ---
-# Các tham số này có thể tính toán qua CAD hoặc cho tàu 
+# --- 2. Các đạo hàm thủy động học (Theo tiêu chuẩn Fossen Marine Craft) ---
+# Các tham số này có thể tính toán qua mô phỏng CFD, mô hình CAD hoặc thực nghiệm trên tàu
 hydrodynamics:
-  # Diagonal Added Mass (M_A) [kg, kg*m^2]
+  # Khối lượng gia tăng đường chéo (M_A) [kg, kg*m^2]
   added_mass_diagonal:
-    X_udot: 5.5   # Surge added mass
-    Y_vdot: 8.0   # Sway added mass
-    Z_wdot: 14.6  # Heave added mass
-    K_pdot: 0.05  # Roll added mass
-    M_qdot: 0.12  # Pitch added mass
-    N_rdot: 0.12  # Yaw added mass
+    X_udot: 5.5   # Khối lượng gia tăng chuyển động tiến (Surge)
+    Y_vdot: 8.0   # Khối lượng gia tăng chuyển động dạt ngang (Sway)
+    Z_wdot: 14.6  # Khối lượng gia tăng chuyển động nâng/hạ (Heave)
+    K_pdot: 0.05  # Khối lượng gia tăng lắc ngang (Roll)
+    M_qdot: 0.12  # Khối lượng gia tăng chúi/ngóc (Pitch)
+    N_rdot: 0.12  # Khối lượng gia tăng quay trở (Yaw)
 
-  # Linear Damping (D_l: skin friction) [Ns/m, Nms/rad]
+  # Lực cản tuyến tính (D_l: ma sát nhớt bề mặt) [Ns/m, Nms/rad]
   linear_damping:
     Xu: 4.03
     Yv: 6.22
@@ -39,7 +39,7 @@ hydrodynamics:
     Mq: 0.07
     Nr: 0.07
 
-  # Quadratic Damping (D_q: form drag) [Ns^2/m^2, Nms^2/rad^2]
+  # Lực cản bậc hai (D_q: cản hình dáng) [Ns^2/m^2, Nms^2/rad^2]
   quadratic_damping:
     Xuu: 18.18
     Yvv: 21.66
@@ -48,60 +48,60 @@ hydrodynamics:
     Mqq: 1.55
     Nrr: 1.55
 
-# --- 3. ArduSub Compatible Parameters (AP_Motors6DOF & Sensors) ---
+# --- 3. Các thông số tương thích ArduSub (AP_Motors6DOF & Cảm biến) ---
 ardusub:
-  frame_type: "CUSTOM_3THRUSTER"        # Framework config (e.g. CUSTOM_3THRUSTER, VECTORED, VECTORED_6DOF)
+  frame_type: "CUSTOM_3THRUSTER"        # Cấu hình khung (ví dụ: CUSTOM_3THRUSTER, VECTORED, VECTORED_6DOF)
   pwm_limits:
-    min: 1100                           # MOT_PWM_MIN [us]
-    max: 1900                           # MOT_PWM_MAX [us]
-    trim: 1500                          # MOT_PWM_TRIM [us]
-    deadband: 25                        # Deadband around neutral [us]
+    min: 1100                           # Xung PWM tối thiểu MOT_PWM_MIN [us]
+    max: 1900                           # Xung PWM tối đa MOT_PWM_MAX [us]
+    trim: 1500                          # Xung PWM trung hòa MOT_PWM_TRIM [us]
+    deadband: 25                        # Dải chết xung quanh vị trí trung hòa [us]
 
-  # IMU lever arms relative to CoM (corresponds to ArduSub INS_POS1_X/Y/Z)
+  # Cánh tay đòn của IMU so với trọng tâm CoM (tương ứng ArduSub INS_POS1_X/Y/Z)
   imu_lever_arms:
-    imu1: [-0.18,  0.11,  0.04]        # Front-left IMU [m]
-    imu2: [ 0.18,  0.11,  0.04]        # Front-right IMU [m]
-    imu3: [-0.18, -0.11,  0.04]        # Rear-left IMU [m]
-    imu4: [ 0.18, -0.11,  0.04]        # Rear-right IMU [m]
-    imu5: [ 0.00,  0.00,  0.00]        # CoM center IMU [m]
+    imu1: [-0.18,  0.11,  0.04]        # IMU phía trước bên trái [m]
+    imu2: [ 0.18,  0.11,  0.04]        # IMU phía trước bên phải [m]
+    imu3: [-0.18, -0.11,  0.04]        # IMU phía sau bên trái [m]
+    imu4: [ 0.18, -0.11,  0.04]        # IMU phía sau bên phải [m]
+    imu5: [ 0.00,  0.00,  0.00]        # IMU tại tâm trọng tâm CoM [m]
 
-  # Thrusters layout with positions, directions, and ArduSub motor factors
-  # Motor factors correspond to rows of thruster allocation matrix B:
+  # Bố trí động cơ đẩy gồm vị trí, hướng lực và các hệ số động cơ ArduSub
+  # Các hệ số động cơ tương ứng với các hàng của ma trận phân bổ lực đẩy B:
   # [forward = Surge, strafe = Sway, throttle = -Heave, roll = Roll, pitch = Pitch, yaw = Yaw]
   thrusters:
 
     - name: "thruster_left"
-      position: [-0.15, -0.12, 0.0]     # [x, y, z] in body frame [m]
-      direction: [1.0, 0.0, 0.0]        # Unit vector (+x forward)
+      position: [-0.15, -0.12, 0.0]     # [x, y, z] trong hệ thân tàu [m]
+      direction: [1.0, 0.0, 0.0]        # Véc-tơ đơn vị (+x hướng tiến)
       ardusub_factors:
         forward: 1.0
         strafe: 0.0
         throttle: 0.0
         roll: 0.0
         pitch: 0.0
-        yaw: 0.12                       # Moment arm d_y = 0.12 m
+        yaw: 0.12                       # Cánh tay đòn mô-men d_y = 0.12 m
     - name: "thruster_right"
       position: [-0.15, 0.12, 0.0]
-      direction: [1.0, 0.0, 0.0]        # Unit vector (+x forward)
+      direction: [1.0, 0.0, 0.0]        # Véc-tơ đơn vị (+x hướng tiến)
       ardusub_factors:
         forward: 1.0
         strafe: 0.0
         throttle: 0.0
         roll: 0.0
         pitch: 0.0
-        yaw: -0.12                      # Moment arm -d_y = -0.12 m
+        yaw: -0.12                      # Cánh tay đòn mô-men -d_y = -0.12 m
     - name: "thruster_vertical"
       position: [0.0, 0.0, 0.0]
-      direction: [0.0, 0.0, -1.0]       # Unit vector (-z upwards)
+      direction: [0.0, 0.0, -1.0]       # Véc-tơ đơn vị (-z hướng lên trên)
       ardusub_factors:
         forward: 0.0
         strafe: 0.0
-        throttle: 1.0                   # ArduSub throttle +1 pushes UP (-z in NED)
+        throttle: 1.0                   # Ga ArduSub +1 đẩy HƯỚNG LÊN (-z trong NED)
         roll: 0.0
         pitch: 0.0
         yaw: 0.0
 
-# --- 4. Degree of Freedom (DOF) Reduction Configuration ---
+# --- 4. Cấu hình thu giảm bậc tự do (DOF) ---
 dof_config:
   preset: "ROV_3DOF_SURGE_HEAVE_YAW"    # FULL_6DOF, ROV_3DOF_SURGE_HEAVE_YAW, PLANAR_3DOF, ROV_4DOF, CUSTOM
   active_dofs:
@@ -109,10 +109,10 @@ dof_config:
     - "HEAVE"
     - "YAW"
 
-# --- 5. NED Global Environment Parameters ---
-# Defined in Earth-fixed North-East-Down {n} frame
+# --- 5. Các thông số môi trường toàn cục NED ---
+# Được định nghĩa trong hệ quy chiếu Bắc - Đông - Dưới {n} gắn với Trái đất
 ned_environment:
-  gravity: 9.80665                      # Acceleration due to gravity [m/s^2] (+z down)
-  fluid_density: 1025.0                 # Seawater density [kg/m^3] (1000.0 for freshwater)
-  surface_atmospheric_pressure: 101325  # Surface atmospheric pressure [Pa]
-  nominal_ocean_current: [0.0, 0.0, 0.0]# Ocean current [v_cN, v_cE, v_cD] [m/s] in NED
+  gravity: 9.80665                      # Gia tốc trọng trường [m/s^2] (+z hướng xuống)
+  fluid_density: 1025.0                 # Khối lượng riêng nước biển [kg/m^3] (1000.0 đối với nước ngọt)
+  surface_atmospheric_pressure: 101325  # Áp suất khí quyển tại mặt nước [Pa]
+  nominal_ocean_current: [0.0, 0.0, 0.0]# Vận tốc dòng chảy đại dương [v_cN, v_cE, v_cD] [m/s] trong hệ NED
