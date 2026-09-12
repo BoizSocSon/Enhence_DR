@@ -6,26 +6,19 @@
 namespace nav_dynamics {
 
 DofTransformer::DofTransformer()
-    : DofTransformer(DofPreset::FULL_6DOF) {}
+    : DofTransformer(DofPreset::ROV_6DOF_FULL) {}
 
 DofTransformer::DofTransformer(DofPreset preset) {
     switch (preset) {
-        case DofPreset::FULL_6DOF:
+        case DofPreset::ROV_6DOF_FULL:
             active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY,  DofIndex::HEAVE,
                             DofIndex::ROLL,  DofIndex::PITCH, DofIndex::YAW};
             break;
-        case DofPreset::ROV_3DOF_SURGE_HEAVE_YAW:
+        case DofPreset::ROV_4DOF_CONFIG_1:
+            active_dofs_ = {DofIndex::SURGE, DofIndex::HEAVE, DofIndex::PITCH, DofIndex::YAW};
+            break;
+        case DofPreset::ROV_3DOF_CONFIG_1:
             active_dofs_ = {DofIndex::SURGE, DofIndex::HEAVE, DofIndex::YAW};
-            break;
-        case DofPreset::PLANAR_3DOF_SURGE_SWAY_YAW:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW};
-            break;
-        case DofPreset::ROV_4DOF:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY, DofIndex::HEAVE, DofIndex::YAW};
-            break;
-        case DofPreset::CUSTOM:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY,  DofIndex::HEAVE,
-                            DofIndex::ROLL,  DofIndex::PITCH, DofIndex::YAW};
             break;
     }
     reduced_dim_ = active_dofs_.size();
@@ -164,19 +157,31 @@ Matrix6d DofTransformer::expand_matrix(const MatrixNd& M_r) const {
 }
 
 DofTransformer DofTransformer::make_6dof() {
-    return DofTransformer(DofPreset::FULL_6DOF);
-}
-
-DofTransformer DofTransformer::make_rov_3dof() {
-    return DofTransformer(DofPreset::ROV_3DOF_SURGE_HEAVE_YAW);
-}
-
-DofTransformer DofTransformer::make_planar_3dof() {
-    return DofTransformer(DofPreset::PLANAR_3DOF_SURGE_SWAY_YAW);
+    return DofTransformer(DofPreset::ROV_6DOF_FULL);
 }
 
 DofTransformer DofTransformer::make_rov_4dof() {
-    return DofTransformer(DofPreset::ROV_4DOF);
+    return DofTransformer(DofPreset::ROV_4DOF_CONFIG_1);
+}
+
+DofTransformer DofTransformer::make_rov_3dof() {
+    return DofTransformer(DofPreset::ROV_3DOF_CONFIG_1);
+}
+
+DofTransformer DofTransformer::make_planar_3dof() {
+    return DofTransformer(std::vector<DofIndex>{DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW});
+}
+
+DofTransformer DofTransformer::make_rov_6dof_full() {
+    return DofTransformer(DofPreset::ROV_6DOF_FULL);
+}
+
+DofTransformer DofTransformer::make_rov_4dof_config_1() {
+    return DofTransformer(DofPreset::ROV_4DOF_CONFIG_1);
+}
+
+DofTransformer DofTransformer::make_rov_3dof_config_1() {
+    return DofTransformer(DofPreset::ROV_3DOF_CONFIG_1);
 }
 
 DofTransformer DofTransformer::from_preset(DofPreset preset) {

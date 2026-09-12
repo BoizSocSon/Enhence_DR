@@ -4,26 +4,19 @@
 
 namespace nav_dynamics {
 
-DofConfig::DofConfig() : DofConfig(DofPreset::FULL_6DOF) {}
+DofConfig::DofConfig() : DofConfig(DofPreset::ROV_6DOF_FULL) {}
 
 DofConfig::DofConfig(DofPreset preset) {
     switch (preset) {
-        case DofPreset::FULL_6DOF:
+        case DofPreset::ROV_6DOF_FULL:
             active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY,  DofIndex::HEAVE,
                             DofIndex::ROLL,  DofIndex::PITCH, DofIndex::YAW};
             break;
-        case DofPreset::ROV_3DOF_SURGE_HEAVE_YAW:
+        case DofPreset::ROV_4DOF_CONFIG_1:
+            active_dofs_ = {DofIndex::SURGE, DofIndex::HEAVE, DofIndex::PITCH, DofIndex::YAW};
+            break;
+        case DofPreset::ROV_3DOF_CONFIG_1:
             active_dofs_ = {DofIndex::SURGE, DofIndex::HEAVE, DofIndex::YAW};
-            break;
-        case DofPreset::PLANAR_3DOF_SURGE_SWAY_YAW:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW};
-            break;
-        case DofPreset::ROV_4DOF:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY, DofIndex::HEAVE, DofIndex::YAW};
-            break;
-        case DofPreset::CUSTOM:
-            active_dofs_ = {DofIndex::SURGE, DofIndex::SWAY,  DofIndex::HEAVE,
-                            DofIndex::ROLL,  DofIndex::PITCH, DofIndex::YAW};
             break;
     }
     rebuild_projection_matrix();
@@ -142,19 +135,31 @@ std::vector<std::string> DofConfig::active_dof_names() const {
 }
 
 DofConfig DofConfig::make_6dof() {
-    return DofConfig(DofPreset::FULL_6DOF);
-}
-
-DofConfig DofConfig::make_rov_3dof() {
-    return DofConfig(DofPreset::ROV_3DOF_SURGE_HEAVE_YAW);
-}
-
-DofConfig DofConfig::make_planar_3dof() {
-    return DofConfig(DofPreset::PLANAR_3DOF_SURGE_SWAY_YAW);
+    return DofConfig(DofPreset::ROV_6DOF_FULL);
 }
 
 DofConfig DofConfig::make_rov_4dof() {
-    return DofConfig(DofPreset::ROV_4DOF);
+    return DofConfig(DofPreset::ROV_4DOF_CONFIG_1);
+}
+
+DofConfig DofConfig::make_rov_3dof() {
+    return DofConfig(DofPreset::ROV_3DOF_CONFIG_1);
+}
+
+DofConfig DofConfig::make_planar_3dof() {
+    return DofConfig(std::vector<DofIndex>{DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW});
+}
+
+DofConfig DofConfig::make_rov_6dof_full() {
+    return DofConfig(DofPreset::ROV_6DOF_FULL);
+}
+
+DofConfig DofConfig::make_rov_4dof_config_1() {
+    return DofConfig(DofPreset::ROV_4DOF_CONFIG_1);
+}
+
+DofConfig DofConfig::make_rov_3dof_config_1() {
+    return DofConfig(DofPreset::ROV_3DOF_CONFIG_1);
 }
 
 } // namespace nav_dynamics

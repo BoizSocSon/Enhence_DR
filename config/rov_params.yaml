@@ -129,6 +129,30 @@ dof_config:
   # ROV_4DOF: 4 bậc tự do tịnh tiến và quay (Surge, Heave, Roll, Pitch)
   # CUSTOM: Cấu hình tùy chỉnh
 
+  # Cấu hình 6 DOF
+  preset: "ROV_6DOF_FULL"
+  active_dofs:
+    - "SURGE"
+    - "SWAY"
+    - "HEAVE"
+    - "ROLL"
+    - "PITCH"
+    - "YAW" 
+
+  # Cấu hình 4 DOF bản 1 (Surge, Heave, Pitch, Yaw)
+  preset: "ROV_4DOF_CONFIG_1"
+  active_dofs:
+    - "SURGE"
+    - "HEAVE"
+    - "PITCH"
+    - "YAW"
+
+  transform_matrix_4dof_1:
+    - [1.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Hàng 1: Surge (u)
+    - [0.0, 0.0, 1.0, 0.0, 0.0, 0.0] # Hàng 2: Heave (w)
+    - [0.0, 0.0, 0.0, 0.0, 1.0, 0.0] # Hàng 3: Pitch (q)
+    - [0.0, 0.0, 0.0, 0.0, 0.0, 1.0] # Hàng 4: Yaw (r)
+
   # Cấu hình 3 DOF bản 1 (Surge, Heave, Yaw)
   preset: "ROV_3DOF_CONFIG_1"
   active_dofs:
@@ -138,7 +162,7 @@ dof_config:
 
   # Ma trận chuyển đổi tuyến tính từ 6DOF sang 3DOF: v_3dof = T * v_6dof
   # Kích thước 3x6 ánh xạ [u, v, w, p, q, r]^T -> [u, w, r]^T
-  transform_matrix_3DOF_:
+  transform_matrix_3dof_1:
     - [1.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Hàng 1: Surge (u)
     - [0.0, 0.0, 1.0, 0.0, 0.0, 0.0] # Hàng 2: Heave (w)
     - [0.0, 0.0, 0.0, 0.0, 0.0, 1.0] # Hàng 3: Yaw (r)

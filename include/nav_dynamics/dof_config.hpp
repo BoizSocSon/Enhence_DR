@@ -54,9 +54,12 @@ public:
 
     /// Các hàm khởi tạo tĩnh phụ trợ (factory helpers)
     static DofConfig make_6dof();
+    static DofConfig make_rov_4dof();
     static DofConfig make_rov_3dof();
     static DofConfig make_planar_3dof();
-    static DofConfig make_rov_4dof();
+    static DofConfig make_rov_6dof_full();
+    static DofConfig make_rov_4dof_config_1();
+    static DofConfig make_rov_3dof_config_1();
 
 private:
     void rebuild_projection_matrix();

@@ -10,11 +10,9 @@ namespace nav_dynamics {
  * @brief Các cấu hình bậc tự do (DOF) định sẵn phổ biến
  */
 enum class DofPreset {
-  FULL_6DOF, ///< Đầy đủ 6-DOF (Surge, Sway, Heave, Roll, Pitch, Yaw)
-  ROV_3DOF_SURGE_HEAVE_YAW, ///< 3-DOF {u, w, r} cho ROV ngầm dưới nước
-  PLANAR_3DOF_SURGE_SWAY_YAW, ///< 3-DOF {u, v, r} cho tàu mặt nước (USV)
-  ROV_4DOF,                   ///< 4-DOF {u, v, w, r} (Surge, Sway, Heave, Yaw)
-  CUSTOM ///< Cấu hình DOF tùy chỉnh do người dùng định nghĩa
+  ROV_6DOF_FULL,        ///< 6-DOF {u, v, w, p, q, r} (Surge, Sway, Heave, Roll, Pitch, Yaw)
+  ROV_4DOF_CONFIG_1,    // 4-DOF {u, w, q, r} (Surge, Heave, Pitch, Yaw)
+  ROV_3DOF_CONFIG_1,    // 3-DOF {u, w, r} (Surge, Heave, Yaw)
 };
 
 class DofConfig;
@@ -113,9 +111,12 @@ public:
   // Các hàm khởi tạo tĩnh phụ trợ (Static Factory Helpers)
   // =========================================================================
   static DofTransformer make_6dof();
+  static DofTransformer make_rov_4dof();
   static DofTransformer make_rov_3dof();
   static DofTransformer make_planar_3dof();
-  static DofTransformer make_rov_4dof();
+  static DofTransformer make_rov_6dof_full();
+  static DofTransformer make_rov_4dof_config_1();
+  static DofTransformer make_rov_3dof_config_1();
   static DofTransformer from_preset(DofPreset preset);
   static DofTransformer
   from_dof_names(const std::vector<std::string> &dof_names);

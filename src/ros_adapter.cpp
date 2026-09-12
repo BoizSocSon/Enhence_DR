@@ -151,4 +151,42 @@ void RosAdapter::from_rov_3dof_twist_pod(const TwistPOD& pod, double& u, double&
     r = pod.angular.z;
 }
 
+TwistPOD RosAdapter::to_rov_4dof_twist_pod(double u, double w, double q, double r) {
+    TwistPOD pod;
+    pod.linear.x = u;
+    pod.linear.y = 0.0;
+    pod.linear.z = w;
+    pod.angular.x = 0.0;
+    pod.angular.y = q;
+    pod.angular.z = r;
+    return pod;
+}
+
+void RosAdapter::from_rov_4dof_twist_pod(const TwistPOD& pod, double& u, double& w, double& q, double& r) {
+    u = pod.linear.x;
+    w = pod.linear.z;
+    q = pod.angular.y;
+    r = pod.angular.z;
+}
+
+TwistPOD RosAdapter::to_rov_6dof_twist_pod(double u, double v, double w, double p, double q, double r) {
+    TwistPOD pod;
+    pod.linear.x = u;
+    pod.linear.y = v;
+    pod.linear.z = w;
+    pod.angular.x = p;
+    pod.angular.y = q;
+    pod.angular.z = r;
+    return pod;
+}
+
+void RosAdapter::from_rov_6dof_twist_pod(const TwistPOD& pod, double& u, double& v, double& w, double& p, double& q, double& r) {
+    u = pod.linear.x;
+    v = pod.linear.y;
+    w = pod.linear.z;
+    p = pod.angular.x;
+    q = pod.angular.y;
+    r = pod.angular.z;
+}
+
 } // namespace nav_dynamics

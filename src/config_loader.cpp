@@ -209,40 +209,66 @@ DofTransformer parse_dof_transformer_from_node(const YAML::Node& root) {
             }
         }
 
+        std::string preset_str;
+        if (dof_node["preset"]) {
+            preset_str = dof_node["preset"].as<std::string>();
+        }
+
+        // Chọn node ma trận phù hợp theo preset (nếu có) hoặc các khóa phổ biến
         YAML::Node mat_node;
-        if (dof_node["transform_matrix_3DOF_"]) {
-            mat_node = dof_node["transform_matrix_3DOF_"];
-        } else if (dof_node["transform_matrix"]) {
-            mat_node = dof_node["transform_matrix"];
-        } else if (dof_node["transform_matrix_3dof"]) {
-            mat_node = dof_node["transform_matrix_3dof"];
-        } else if (dof_node["transformation_matrix"]) {
-            mat_node = dof_node["transformation_matrix"];
-        } else if (dof_node["projection_matrix"]) {
-            mat_node = dof_node["projection_matrix"];
+        if (preset_str == "ROV_4DOF_CONFIG_1" || preset_str == "ROV_4DOF") {
+            if (dof_node["transform_matrix_4dof_1"]) mat_node = dof_node["transform_matrix_4dof_1"];
+            else if (dof_node["transform_matrix_4dof"]) mat_node = dof_node["transform_matrix_4dof"];
+        } else if (preset_str == "ROV_3DOF_CONFIG_1" || preset_str == "ROV_3DOF_SURGE_HEAVE_YAW") {
+            if (dof_node["transform_matrix_3dof_1"]) mat_node = dof_node["transform_matrix_3dof_1"];
+            else if (dof_node["transform_matrix_3dof"]) mat_node = dof_node["transform_matrix_3dof"];
+            else if (dof_node["transform_matrix_3DOF_"]) mat_node = dof_node["transform_matrix_3DOF_"];
+        } else if (preset_str == "ROV_6DOF_FULL" || preset_str == "FULL_6DOF") {
+            if (dof_node["transform_matrix_6dof"]) mat_node = dof_node["transform_matrix_6dof"];
+        }
+
+        // Nếu chưa tìm thấy theo preset, thử tìm các khóa chung
+        if (!mat_node) {
+            if (dof_node["transform_matrix_3dof_1"]) {
+                mat_node = dof_node["transform_matrix_3dof_1"];
+            } else if (dof_node["transform_matrix_3DOF_"]) {
+                mat_node = dof_node["transform_matrix_3DOF_"];
+            } else if (dof_node["transform_matrix_4dof_1"]) {
+                mat_node = dof_node["transform_matrix_4dof_1"];
+            } else if (dof_node["transform_matrix"]) {
+                mat_node = dof_node["transform_matrix"];
+            } else if (dof_node["transform_matrix_3dof"]) {
+                mat_node = dof_node["transform_matrix_3dof"];
+            } else if (dof_node["transform_matrix_4dof"]) {
+                mat_node = dof_node["transform_matrix_4dof"];
+            } else if (dof_node["transformation_matrix"]) {
+                mat_node = dof_node["transformation_matrix"];
+            } else if (dof_node["projection_matrix"]) {
+                mat_node = dof_node["projection_matrix"];
+            }
         }
 
         MatrixNd T_mat;
         if (mat_node && parse_matrix_nx6(mat_node, T_mat)) {
-            return DofTransformer(T_mat, active_dofs);
+            if (!active_dofs.empty() && static_cast<size_t>(T_mat.rows()) == active_dofs.size()) {
+                return DofTransformer(T_mat, active_dofs);
+            }
+            return DofTransformer(T_mat);
         }
 
         if (!active_names.empty()) {
             return DofTransformer::from_dof_names(active_names);
         }
 
-        if (dof_node["preset"]) {
-            std::string preset = dof_node["preset"].as<std::string>();
-            if (preset == "FULL_6DOF") {
+        if (!preset_str.empty()) {
+            if (preset_str == "ROV_6DOF_FULL" || preset_str == "FULL_6DOF") {
                 return DofTransformer::make_6dof();
-            } else if (preset == "ROV_3DOF_SURGE_HEAVE_YAW" || preset == "ROV_3DOF_CONFIG_1") {
-                return DofTransformer::make_rov_3dof();
-            } else if (preset == "PLANAR_3DOF") {
-                return DofTransformer::make_planar_3dof();
-            } else if (preset == "ROV_4DOF") {
+            } else if (preset_str == "ROV_4DOF_CONFIG_1" || preset_str == "ROV_4DOF") {
                 return DofTransformer::make_rov_4dof();
-            } else {
+            } else if (preset_str == "ROV_3DOF_CONFIG_1" || preset_str == "ROV_3DOF_SURGE_HEAVE_YAW") {
                 return DofTransformer::make_rov_3dof();
+            } else if (preset_str == "PLANAR_3DOF" || preset_str == "PLANAR_3DOF_SURGE_SWAY_YAW") {
+                return DofTransformer::make_planar_3dof();
             }
         }
     }

@@ -118,6 +118,12 @@ public:
     static TwistPOD to_rov_3dof_twist_pod(double u, double w, double r);
     static void from_rov_3dof_twist_pod(const TwistPOD& pod, double& u, double& w, double& r);
 
+    static TwistPOD to_rov_4dof_twist_pod(double u, double w, double q, double r);
+    static void from_rov_4dof_twist_pod(const TwistPOD& pod, double& u, double& w, double& q, double& r);
+
+    static TwistPOD to_rov_6dof_twist_pod(double u, double v, double w, double p, double q, double r);
+    static void from_rov_6dof_twist_pod(const TwistPOD& pod, double& u, double& v, double& w, double& p, double& q, double& r);
+
     // --- Các template Duck-Typed ánh xạ trực tiếp sang thông điệp ROS 1 / ROS 2 ---
     // Cách sử dụng trong nút ROS:
     //   nav_dynamics::RosAdapter::to_ros_twist(state.nu, ros_twist_msg);
