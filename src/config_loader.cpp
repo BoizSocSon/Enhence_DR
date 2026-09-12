@@ -192,10 +192,21 @@ DofTransformer parse_dof_transformer_from_node(const YAML::Node& root) {
     if (root["dof_config"]) {
         auto dof_node = root["dof_config"];
 
+        std::string preset_str;
+        YAML::Node active_dofs_node;
+        for (auto it = dof_node.begin(); it != dof_node.end(); ++it) {
+            std::string key = it->first.as<std::string>();
+            if (key == "preset") {
+                preset_str = it->second.as<std::string>();
+            } else if (key == "active_dofs") {
+                active_dofs_node = it->second;
+            }
+        }
+
         std::vector<DofIndex> active_dofs;
         std::vector<std::string> active_names;
-        if (dof_node["active_dofs"] && dof_node["active_dofs"].IsSequence()) {
-            for (const auto& item : dof_node["active_dofs"]) {
+        if (active_dofs_node && active_dofs_node.IsSequence()) {
+            for (const auto& item : active_dofs_node) {
                 std::string name = item.as<std::string>();
                 active_names.push_back(name);
                 std::string upper_name = name;
@@ -207,11 +218,6 @@ DofTransformer parse_dof_transformer_from_node(const YAML::Node& root) {
                 else if (upper_name == "PITCH" || upper_name == "Q") active_dofs.push_back(DofIndex::PITCH);
                 else if (upper_name == "YAW" || upper_name == "R") active_dofs.push_back(DofIndex::YAW);
             }
-        }
-
-        std::string preset_str;
-        if (dof_node["preset"]) {
-            preset_str = dof_node["preset"].as<std::string>();
         }
 
         // Chọn node ma trận phù hợp theo preset (nếu có) hoặc các khóa phổ biến

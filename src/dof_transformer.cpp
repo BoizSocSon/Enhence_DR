@@ -137,6 +137,32 @@ MatrixNd DofTransformer::transform_thruster_allocation(const MatrixNd& B) const 
     return T_ * B;
 }
 
+MatrixNd DofTransformer::transform_jacobian(const Matrix6d& J) const {
+    return T_ * J * T_.transpose();
+}
+
+MatrixNd DofTransformer::compute_reduced_jacobian(const KinematicState& state) const {
+    return transform_jacobian(state.J_full());
+}
+
+Matrix6d DofTransformer::active_subspace_projector() const {
+    return T_.transpose() * T_;
+}
+
+Vector6d DofTransformer::project_to_active(const Vector6d& v) const {
+    return (T_.transpose() * T_) * v;
+}
+
+Matrix3d DofTransformer::compute_3dof_jacobian(double psi) {
+    Matrix3d J_3;
+    const double c_psi = std::cos(psi);
+    const double s_psi = std::sin(psi);
+    J_3 << c_psi, 0.0, 0.0,
+           s_psi, 0.0, 0.0,
+           0.0,   0.0, 1.0;
+    return J_3;
+}
+
 Vector6d DofTransformer::expand_vector(const VectorNd& v_r,
                                        const Vector6d& constrained_vals) const {
     if (static_cast<size_t>(v_r.size()) != reduced_dim_) {

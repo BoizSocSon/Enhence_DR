@@ -113,6 +113,9 @@ public:
                   double dt,
                   const FluidCurrent& current = FluidCurrent()) const;
 
+    /// Áp đặt các ràng buộc hình học và triệt tiêu vận tốc dư theo cấu hình DOF hiện tại
+    void apply_kinematic_constraints(KinematicState& state) const;
+
 private:
     VehicleParameters params_;
     DofTransformer transformer_;

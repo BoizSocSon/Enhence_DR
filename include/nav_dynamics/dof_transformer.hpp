@@ -94,6 +94,18 @@ public:
   /// Thu giảm ma trận phân bổ lực đẩy 6 x k: B_r = T * B thuộc R^{n x k}
   [[nodiscard]] MatrixNd transform_thruster_allocation(const MatrixNd &B) const;
 
+  /// Thu giảm ma trận Jacobian động học 6x6: J_r = T * J * T^T thuộc R^{n x n}
+  [[nodiscard]] MatrixNd transform_jacobian(const Matrix6d &J) const;
+
+  /// Tính ma trận Jacobian động học thu giảm từ trạng thái động học
+  [[nodiscard]] MatrixNd compute_reduced_jacobian(const KinematicState &state) const;
+
+  /// Ma trận chiếu lên không gian con các bậc tự do hoạt động: Projector = T^T * T thuộc R^{6x6}
+  [[nodiscard]] Matrix6d active_subspace_projector() const;
+
+  /// Chiếu véc-tơ 6D về không gian con hoạt động (triệt tiêu các thành phần ở các trục không hoạt động)
+  [[nodiscard]] Vector6d project_to_active(const Vector6d &v) const;
+
   // =========================================================================
   // Các toán tử mở rộng ngược về không gian 6D
   // =========================================================================
@@ -110,6 +122,7 @@ public:
   // =========================================================================
   // Các hàm khởi tạo tĩnh phụ trợ (Static Factory Helpers)
   // =========================================================================
+  static Matrix3d compute_3dof_jacobian(double psi);
   static DofTransformer make_6dof();
   static DofTransformer make_rov_4dof();
   static DofTransformer make_rov_3dof();

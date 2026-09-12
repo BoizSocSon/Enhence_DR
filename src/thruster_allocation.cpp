@@ -63,6 +63,10 @@ void ThrusterAllocation::rebuild_allocation_matrix() {
 
     // Ma trận giả nghịch đảo Moore-Penrose sử dụng CompleteOrthogonalDecomposition / SVD
     B_pinv_ = B_.completeOrthogonalDecomposition().pseudoInverse();
+
+    if (current_thrusts_.size() != static_cast<Eigen::Index>(k)) {
+        current_thrusts_ = VectorNd::Zero(k);
+    }
 }
 
 Vector6d ThrusterAllocation::forward_allocation(const VectorNd& thrusts) const {
@@ -126,6 +130,32 @@ VectorNd ThrusterAllocation::thrusts_to_pwm(const VectorNd& thrusts) const {
         pwms[j] = thrusters_[j].thrust_to_pwm(thrusts[j]);
     }
     return pwms;
+}
+
+VectorNd ThrusterAllocation::step_thruster_dynamics(const VectorNd& target_thrusts, double dt) {
+    const size_t k = thrusters_.size();
+    if (static_cast<size_t>(target_thrusts.size()) != k) {
+        throw std::invalid_argument("step_thruster_dynamics: target_thrusts size mismatch!");
+    }
+    if (current_thrusts_.size() != static_cast<Eigen::Index>(k)) {
+        current_thrusts_ = VectorNd::Zero(k);
+    }
+
+    for (size_t j = 0; j < k; ++j) {
+        double tau_m = thrusters_[j].time_constant;
+        double target = target_thrusts[j];
+        target = std::clamp(target, -thrusters_[j].max_thrust_rev, thrusters_[j].max_thrust_fwd);
+
+        if (tau_m <= 1e-6 || dt <= 0.0) {
+            current_thrusts_[j] = target;
+        } else {
+            // Hàm truyền trễ bậc 1: T_k+1 = T_k + alpha * (T_target - T_k)
+            double alpha = dt / (tau_m + dt);
+            current_thrusts_[j] += alpha * (target - current_thrusts_[j]);
+            current_thrusts_[j] = std::clamp(current_thrusts_[j], -thrusters_[j].max_thrust_rev, thrusters_[j].max_thrust_fwd);
+        }
+    }
+    return current_thrusts_;
 }
 
 ThrusterAllocation ThrusterAllocation::make_project_rov_3thruster(double l_x, double d_y, double z_t) {

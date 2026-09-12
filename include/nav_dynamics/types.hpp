@@ -280,6 +280,30 @@ struct KinematicState {
         J.block<3, 3>(3, 3) = T;
         return J;
     }
+
+    /// Áp đặt các ràng buộc hình học cho mô hình ROV 3-DOF {u, w, r}
+    void enforce_3dof_constraints() {
+        nu(1) = 0.0; // v = 0 (sway)
+        nu(3) = 0.0; // p = 0 (roll rate)
+        nu(4) = 0.0; // q = 0 (pitch rate)
+        nu_dot(1) = 0.0;
+        nu_dot(3) = 0.0;
+        nu_dot(4) = 0.0;
+        euler_rpy.x() = 0.0; // phi = 0
+        euler_rpy.y() = 0.0; // theta = 0
+        orientation = Eigen::AngleAxisd(euler_rpy.z(), Vector3d::UnitZ());
+    }
+
+    /// Áp đặt các ràng buộc hình học cho mô hình ROV 4-DOF {u, w, q, r}
+    void enforce_4dof_constraints() {
+        nu(1) = 0.0; // v = 0 (sway)
+        nu(3) = 0.0; // p = 0 (roll rate)
+        nu_dot(1) = 0.0;
+        nu_dot(3) = 0.0;
+        euler_rpy.x() = 0.0; // phi = 0
+        orientation = Eigen::AngleAxisd(euler_rpy.z(), Vector3d::UnitZ())
+                    * Eigen::AngleAxisd(euler_rpy.y(), Vector3d::UnitY());
+    }
 };
 
 /**
@@ -322,6 +346,15 @@ struct FluidCurrent {
         // Quay trực tiếp qua Quaternion liên hợp: tránh tạo ma trận 3x3 và chuyển vị, nhanh gấp ~3 lần
         nu_r.head<3>() -= state.orientation.conjugate() * v_c_ned;
         return nu_r;
+    }
+
+    /// Tính gia tốc dòng chảy trong hệ thân tàu do tàu tự quay quanh trục: dot(nu_c_b) = -omega x nu_c_b
+    [[nodiscard]] Vector6d compute_current_acceleration(const KinematicState& state) const {
+        Vector6d nu_c_dot = Vector6d::Zero();
+        Vector3d v_c_body = state.orientation.conjugate() * v_c_ned;
+        Vector3d omega = state.nu.tail<3>();
+        nu_c_dot.head<3>() = -omega.cross(v_c_body);
+        return nu_c_dot;
     }
 };
 

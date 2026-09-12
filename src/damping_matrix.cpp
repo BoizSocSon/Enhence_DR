@@ -12,9 +12,12 @@ void DampingMatrixEvaluator::set_parameters(const VehicleParameters& params) {
 
 Matrix6d DampingMatrixEvaluator::compute_D_quadratic(const Vector6d& nu_r) const {
     Matrix6d D_q = Matrix6d::Zero();
-    // Các phần tử đường chéo: D_q(i, i) = params_.D_q(i, i) * |nu_r(i)|
+    // Hỗ trợ đầy đủ cả ma trận đường chéo và các hệ số cản ghép chéo (cross-coupling):
+    // D_q(i, j) = params_.D_q(i, j) * |nu_r(j)| sao cho tau_D_q = D_q(nu_r) * nu_r
     for (int i = 0; i < 6; ++i) {
-        D_q(i, i) = params_.D_q(i, i) * std::abs(nu_r(i));
+        for (int j = 0; j < 6; ++j) {
+            D_q(i, j) = params_.D_q(i, j) * std::abs(nu_r(j));
+        }
     }
     return D_q;
 }

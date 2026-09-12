@@ -22,6 +22,7 @@ struct ThrusterUnit {
     double max_thrust_rev = 40.0; ///< Lực đẩy lùi tối đa [N]
     double deadband_pwm = 25.0;   ///< Dải chết PWM quanh vị trí trung hòa [us] (ví dụ: 1500 +/- 25)
     double neutral_pwm = 1500.0;  ///< Giá trị xung PWM trung hòa [us]
+    double time_constant = 0.0;   ///< Hằng số thời gian trễ bậc 1 của động cơ tau_m [s] (0.0 = phản hồi tức thời)
 
     /// Tính cột véc-tơ lực và mô-men tổng quát 6D: b_j = [e_j; r_j x e_j]
     [[nodiscard]] Vector6d wrench_column() const {
@@ -87,6 +88,15 @@ public:
     /// Chuyển đổi véc-tơ lực đẩy sang lệnh xung PWM tương ứng
     [[nodiscard]] VectorNd thrusts_to_pwm(const VectorNd& thrusts) const;
 
+    /// Cập nhật động học trễ động cơ bậc 1 (First-order thruster lag): dot(T) = (T_target - T) / tau_m
+    VectorNd step_thruster_dynamics(const VectorNd& target_thrusts, double dt);
+
+    /// Lấy véc-tơ lực đẩy tức thời hiện tại của các động cơ
+    [[nodiscard]] const VectorNd& current_thrusts() const { return current_thrusts_; }
+
+    /// Gán trực tiếp véc-tơ lực đẩy tức thời
+    void set_current_thrusts(const VectorNd& thrusts) { current_thrusts_ = thrusts; }
+
     /// Hàm tĩnh hỗ trợ tạo cấu hình ROV chuẩn 3 động cơ của dự án (TL, TR, TV)
     static ThrusterAllocation make_project_rov_3thruster(double l_x = 0.15, double d_y = 0.12, double z_t = 0.0);
 
@@ -96,6 +106,7 @@ private:
     std::vector<ThrusterUnit> thrusters_;
     MatrixNd B_;      ///< Ma trận phân bổ kích thước 6 x k
     MatrixNd B_pinv_; ///< Ma trận giả nghịch đảo kích thước k x 6
+    VectorNd current_thrusts_; ///< Lực đẩy hiện tại của các động cơ
 };
 
 } // namespace nav_dynamics
