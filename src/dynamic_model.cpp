@@ -145,6 +145,26 @@ Vector6d DynamicModel::compute_inverse_dynamics(const KinematicState& state,
     return f_inertial + f_coriolis + f_damping + f_restoring;
 }
 
+VectorNd DynamicModel::compute_inverse_dynamics_reduced(const KinematicState& state,
+                                                       const VectorNd& nu_dot_r,
+                                                       const FluidCurrent& current) const {
+    Vector6d nu = state.nu;
+    Vector6d nu_r = current.compute_relative_velocity(state);
+
+    MatrixNd M_r = transformer_.transform_mass(mass_evaluator_.M_total());
+    VectorNd f_inertial_r = M_r * nu_dot_r;
+
+    Vector6d f_coriolis = coriolis_evaluator_.compute_coriolis_force(nu, nu_r);
+    Vector6d f_damping = damping_evaluator_.compute_damping_force(nu_r);
+    Vector6d f_restoring = restoring_evaluator_.compute_g_state(state);
+
+    VectorNd f_coriolis_r = transformer_.transform_vector(f_coriolis);
+    VectorNd f_damping_r = transformer_.transform_vector(f_damping);
+    VectorNd f_restoring_r = transformer_.transform_vector(f_restoring);
+
+    return f_inertial_r + f_coriolis_r + f_damping_r + f_restoring_r;
+}
+
 static void propagate_kinematics(KinematicState& state, double dt) {
     // 1. Cập nhật vị trí: dot_p_ned = R_nb * v_b
     Vector3d v_body = state.nu.head<3>();

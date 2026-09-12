@@ -66,11 +66,20 @@ public:
     /// Phân bổ thuận cho không gian thu giảm: tau_r = P * B * T
     [[nodiscard]] VectorNd forward_allocation_reduced(const DofConfig& config, const VectorNd& thrusts) const;
 
+    /// Phân bổ thuận cho không gian thu giảm qua DofTransformer: tau_r = T * B * u
+    [[nodiscard]] VectorNd forward_allocation_reduced(const DofTransformer& transformer, const VectorNd& thrusts) const;
+
+    /// Tính ma trận phân bổ lực đẩy thu giảm n x k qua DofTransformer: B_r = T * B
+    [[nodiscard]] MatrixNd compute_reduced_B(const DofTransformer& transformer) const;
+
     /// Phân bổ nghịch: tính lực đẩy các động cơ T từ wrench 6D mong muốn tau
     [[nodiscard]] VectorNd inverse_allocation(const Vector6d& desired_tau) const;
 
     /// Phân bổ nghịch cho không gian thu giảm: tính lực đẩy các động cơ T từ tau_r mong muốn
     [[nodiscard]] VectorNd inverse_allocation_reduced(const DofConfig& config, const VectorNd& desired_tau_r) const;
+
+    /// Phân bổ nghịch cho không gian thu giảm qua DofTransformer: tính u từ tau_r mong muốn
+    [[nodiscard]] VectorNd inverse_allocation_reduced(const DofTransformer& transformer, const VectorNd& desired_tau_r) const;
 
     /// Chuyển đổi véc-tơ lệnh xung PWM sang lực đẩy các động cơ
     [[nodiscard]] VectorNd pwm_to_thrusts(const VectorNd& pwms) const;

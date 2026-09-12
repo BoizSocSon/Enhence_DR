@@ -61,6 +61,16 @@ VectorNd RestoringForceEvaluator::compute_reduced(const DofConfig& config, const
     return config.reduce_vector(g_full);
 }
 
+VectorNd RestoringForceEvaluator::compute_reduced(const DofTransformer& transformer, const KinematicState& state) const {
+    Vector6d g_full = compute_g_state(state);
+    return transformer.transform_restoring(g_full);
+}
+
+VectorNd RestoringForceEvaluator::compute_reduced(const DofTransformer& transformer, const Matrix3d& R_nb) const {
+    Vector6d g_full = compute_g(R_nb);
+    return transformer.transform_restoring(g_full);
+}
+
 double RestoringForceEvaluator::net_submerged_weight() const {
     return params_.weight() - params_.buoyancy();
 }

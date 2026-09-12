@@ -1,4 +1,5 @@
 #include "nav_dynamics/dof_transformer.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -42,13 +43,29 @@ DofTransformer::DofTransformer(const std::vector<DofIndex>& active_dofs)
     build_T_from_active_dofs();
 }
 
-DofTransformer::DofTransformer(const MatrixNd& custom_T)
+DofTransformer::DofTransformer(const MatrixNd& custom_T, const std::vector<DofIndex>& active_dofs)
     : reduced_dim_(custom_T.rows()), T_(custom_T) {
     if (custom_T.cols() != 6) {
         throw std::invalid_argument("DofTransformer: custom_T must have exactly 6 columns!");
     }
     if (custom_T.rows() < 1 || custom_T.rows() > 6) {
         throw std::invalid_argument("DofTransformer: custom_T rows must be between 1 and 6!");
+    }
+
+    if (!active_dofs.empty()) {
+        if (active_dofs.size() != static_cast<size_t>(custom_T.rows())) {
+            throw std::invalid_argument("DofTransformer: active_dofs size does not match custom_T rows!");
+        }
+        active_dofs_ = active_dofs;
+    } else {
+        active_dofs_.clear();
+        for (Eigen::Index r = 0; r < custom_T.rows(); ++r) {
+            Eigen::Index max_col = 0;
+            double max_val = custom_T.row(r).cwiseAbs().maxCoeff(&max_col);
+            if (max_val > 1e-6 && max_col >= 0 && max_col < 6) {
+                active_dofs_.push_back(static_cast<DofIndex>(max_col));
+            }
+        }
     }
 }
 
@@ -189,6 +206,14 @@ DofTransformer DofTransformer::from_dof_names(const std::vector<std::string>& do
         }
     }
     return DofTransformer(active);
+}
+
+DofConfig DofTransformer::to_dof_config() const {
+    return DofConfig(T_, active_dofs_);
+}
+
+DofTransformer DofTransformer::from_matrix(const MatrixNd& custom_T, const std::vector<DofIndex>& active_dofs) {
+    return DofTransformer(custom_T, active_dofs);
 }
 
 } // namespace nav_dynamics

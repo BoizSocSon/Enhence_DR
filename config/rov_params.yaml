@@ -136,6 +136,12 @@ dof_config:
     - "HEAVE"
     - "YAW"
 
+  # Ma trận chuyển đổi tuyến tính từ 6DOF sang 3DOF: v_3dof = T * v_6dof
+  # Kích thước 3x6 ánh xạ [u, v, w, p, q, r]^T -> [u, w, r]^T
+  transform_matrix_3DOF_:
+    - [1.0, 0.0, 0.0, 0.0, 0.0, 0.0] # Hàng 1: Surge (u)
+    - [0.0, 0.0, 1.0, 0.0, 0.0, 0.0] # Hàng 2: Heave (w)
+    - [0.0, 0.0, 0.0, 0.0, 0.0, 1.0] # Hàng 3: Yaw (r)
 
 # --- 5. Các thông số môi trường toàn cục NED ---
 # Được định nghĩa trong hệ quy chiếu Bắc - Đông - Dưới {n} gắn với Trái đất

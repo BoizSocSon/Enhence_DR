@@ -1,12 +1,19 @@
 #include "nav_dynamics/config_loader.hpp"
 #include "test_common.hpp"
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 int main() {
     std::cout << "[TEST] Running test_config_loader..." << std::endl;
 
     std::string config_path = "config/rov_params.yaml";
+    if (!std::ifstream(config_path).good()) {
+        config_path = "../config/rov_params.yaml";
+    }
+    if (!std::ifstream(config_path).good()) {
+        config_path = "../../config/rov_params.yaml";
+    }
     if (!std::ifstream(config_path).good()) {
         config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
     }
@@ -57,6 +64,26 @@ int main() {
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::SURGE), "Surge must be active!");
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::HEAVE), "Heave must be active!");
     NAV_TEST_ASSERT(cfg.dof_transformer.is_dof_active(nav_dynamics::DofIndex::YAW), "Yaw must be active!");
+
+    // Kiểm tra chính xác các phần tử ma trận transform_matrix_3DOF_ được nạp từ YAML
+    const auto& T = cfg.dof_transformer.T_matrix();
+    NAV_TEST_ASSERT(T.rows() == 3 && T.cols() == 6, "Matrix T size must be 3x6!");
+    NAV_TEST_ASSERT(std::abs(T(0, 0) - 1.0) < 1e-9, "T(0,0) must be 1.0 for Surge!");
+    NAV_TEST_ASSERT(std::abs(T(1, 2) - 1.0) < 1e-9, "T(1,2) must be 1.0 for Heave!");
+    NAV_TEST_ASSERT(std::abs(T(2, 5) - 1.0) < 1e-9, "T(2,5) must be 1.0 for Yaw!");
+    // Các phần tử khác bằng 0
+    NAV_TEST_ASSERT(std::abs(T(0, 1)) < 1e-9 && std::abs(T(0, 2)) < 1e-9, "T row 0 non-surge must be 0!");
+    NAV_TEST_ASSERT(std::abs(T(1, 0)) < 1e-9 && std::abs(T(1, 1)) < 1e-9, "T row 1 non-heave must be 0!");
+    NAV_TEST_ASSERT(std::abs(T(2, 0)) < 1e-9 && std::abs(T(2, 4)) < 1e-9, "T row 2 non-yaw must be 0!");
+
+    // Kiểm tra nạp độc lập DofTransformer và DofConfig từ file YAML
+    auto t_standalone = nav_dynamics::ConfigLoader::load_dof_transformer(config_path);
+    NAV_TEST_ASSERT(t_standalone.reduced_dim() == 3, "Standalone load_dof_transformer dim must be 3!");
+    NAV_TEST_ASSERT(t_standalone.is_orthogonal(), "Standalone transformer must be orthogonal!");
+
+    auto c_standalone = nav_dynamics::ConfigLoader::load_dof_config(config_path);
+    NAV_TEST_ASSERT(c_standalone.dim() == 3, "Standalone load_dof_config dim must be 3!");
+    NAV_TEST_ASSERT(c_standalone.is_active(nav_dynamics::DofIndex::SURGE), "Surge active in standalone config!");
 
     // 6. Kiểm tra các thông số môi trường NED
     NAV_TEST_ASSERT(std::abs(cfg.ned_env.gravity - 9.80665) < 1e-9, "Gravity mismatch!");

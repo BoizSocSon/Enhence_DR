@@ -77,11 +77,25 @@ MatrixNd CoriolisMatrixEvaluator::compute_reduced(const DofConfig& config,
     return config.reduce_matrix(C);
 }
 
+MatrixNd CoriolisMatrixEvaluator::compute_reduced(const DofTransformer& transformer,
+                                                 const Vector6d& nu,
+                                                 const Vector6d& nu_r) const {
+    Matrix6d C = compute_C(nu, nu_r);
+    return transformer.transform_coriolis(C);
+}
+
 VectorNd CoriolisMatrixEvaluator::compute_coriolis_force_reduced(const DofConfig& config,
                                                                 const Vector6d& nu,
                                                                 const Vector6d& nu_r) const {
     Vector6d f = compute_coriolis_force(nu, nu_r);
     return config.reduce_vector(f);
+}
+
+VectorNd CoriolisMatrixEvaluator::compute_coriolis_force_reduced(const DofTransformer& transformer,
+                                                                const Vector6d& nu,
+                                                                const Vector6d& nu_r) const {
+    Vector6d f = compute_coriolis_force(nu, nu_r);
+    return transformer.transform_vector(f);
 }
 
 } // namespace nav_dynamics

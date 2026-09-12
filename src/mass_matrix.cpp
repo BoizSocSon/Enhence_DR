@@ -57,8 +57,21 @@ MatrixNd MassMatrixEvaluator::compute_reduced(const DofConfig& config) const {
     return config.reduce_matrix(M_total_);
 }
 
+MatrixNd MassMatrixEvaluator::compute_reduced(const DofTransformer& transformer) const {
+    return transformer.transform_mass(M_total_);
+}
+
 VectorNd MassMatrixEvaluator::solve_reduced(const DofConfig& config, const VectorNd& b_r) const {
     MatrixNd M_r = compute_reduced(config);
+    Eigen::LLT<MatrixNd> llt(M_r);
+    if (llt.info() == Eigen::Success) {
+        return llt.solve(b_r);
+    }
+    return M_r.ldlt().solve(b_r);
+}
+
+VectorNd MassMatrixEvaluator::solve_reduced(const DofTransformer& transformer, const VectorNd& b_r) const {
+    MatrixNd M_r = compute_reduced(transformer);
     Eigen::LLT<MatrixNd> llt(M_r);
     if (llt.info() == Eigen::Success) {
         return llt.solve(b_r);

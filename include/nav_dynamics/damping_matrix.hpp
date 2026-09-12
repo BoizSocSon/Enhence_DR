@@ -33,8 +33,14 @@ public:
     /// Tính ma trận cản thu giảm n x n cho cấu hình DOF đã cho
     [[nodiscard]] MatrixNd compute_reduced(const DofConfig& config, const Vector6d& nu_r) const;
 
+    /// Tính ma trận cản thu giảm n x n cho bộ biến đổi DofTransformer: D_r = T * D * T^T
+    [[nodiscard]] MatrixNd compute_reduced(const DofTransformer& transformer, const Vector6d& nu_r) const;
+
     /// Tính véc-tơ lực cản thu giảm n x 1 cho cấu hình DOF đã cho
     [[nodiscard]] VectorNd compute_damping_force_reduced(const DofConfig& config, const Vector6d& nu_r) const;
+
+    /// Tính véc-tơ lực cản thu giảm n x 1 cho bộ biến đổi DofTransformer: tau_D_r = T * tau_D
+    [[nodiscard]] VectorNd compute_damping_force_reduced(const DofTransformer& transformer, const Vector6d& nu_r) const;
 
     /// Kiểm tra ma trận cản có thực sự tiêu tán năng lượng hay không (nu_r^T * D * nu_r > 0)
     [[nodiscard]] bool is_dissipative(const Vector6d& nu_r) const;

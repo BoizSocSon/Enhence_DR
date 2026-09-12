@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 
 #define NAV_TEST_ASSERT(cond, msg) \

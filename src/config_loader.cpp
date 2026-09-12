@@ -6,17 +6,40 @@
 
 namespace nav_dynamics {
 
-RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
-    YAML::Node root;
-    try {
-        root = YAML::LoadFile(filepath);
-    } catch (const std::exception& e) {
-        throw std::runtime_error("ConfigLoader::load_from_yaml failed to open file '" + filepath + "': " + e.what());
-    }
-
-    RovConfig config;
-
 namespace {
+
+bool parse_matrix_nx6(const YAML::Node& node, MatrixNd& out_mat) {
+    if (!node) return false;
+    if (node.IsSequence()) {
+        // Dạng bảng n dòng x 6 cột: [[...], [...], ...]
+        if (node.size() >= 1 && node.size() <= 6 && node[0].IsSequence() && node[0].size() == 6) {
+            size_t rows = node.size();
+            out_mat.resize(rows, 6);
+            for (size_t r = 0; r < rows; ++r) {
+                if (!node[r].IsSequence() || node[r].size() != 6) {
+                    return false;
+                }
+                for (int c = 0; c < 6; ++c) {
+                    out_mat(r, c) = node[r][c].as<double>();
+                }
+            }
+            return true;
+        }
+        // Dạng mảng phẳng (bội số của 6, ví dụ 18 phần tử cho 3x6)
+        if (node.size() >= 6 && node.size() <= 36 && node.size() % 6 == 0) {
+            size_t rows = node.size() / 6;
+            std::vector<double> vals = node.as<std::vector<double>>();
+            out_mat.resize(rows, 6);
+            for (size_t r = 0; r < rows; ++r) {
+                for (size_t c = 0; c < 6; ++c) {
+                    out_mat(r, c) = vals[r * 6 + c];
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
 
 bool parse_matrix6d(const YAML::Node& node, Matrix6d& out_mat) {
     if (!node) return false;
@@ -165,6 +188,67 @@ void parse_vehicle_parameters_from_node(const YAML::Node& root, VehicleParameter
     }
 }
 
+DofTransformer parse_dof_transformer_from_node(const YAML::Node& root) {
+    if (root["dof_config"]) {
+        auto dof_node = root["dof_config"];
+
+        std::vector<DofIndex> active_dofs;
+        std::vector<std::string> active_names;
+        if (dof_node["active_dofs"] && dof_node["active_dofs"].IsSequence()) {
+            for (const auto& item : dof_node["active_dofs"]) {
+                std::string name = item.as<std::string>();
+                active_names.push_back(name);
+                std::string upper_name = name;
+                std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
+                if (upper_name == "SURGE" || upper_name == "U") active_dofs.push_back(DofIndex::SURGE);
+                else if (upper_name == "SWAY" || upper_name == "V") active_dofs.push_back(DofIndex::SWAY);
+                else if (upper_name == "HEAVE" || upper_name == "W") active_dofs.push_back(DofIndex::HEAVE);
+                else if (upper_name == "ROLL" || upper_name == "P") active_dofs.push_back(DofIndex::ROLL);
+                else if (upper_name == "PITCH" || upper_name == "Q") active_dofs.push_back(DofIndex::PITCH);
+                else if (upper_name == "YAW" || upper_name == "R") active_dofs.push_back(DofIndex::YAW);
+            }
+        }
+
+        YAML::Node mat_node;
+        if (dof_node["transform_matrix_3DOF_"]) {
+            mat_node = dof_node["transform_matrix_3DOF_"];
+        } else if (dof_node["transform_matrix"]) {
+            mat_node = dof_node["transform_matrix"];
+        } else if (dof_node["transform_matrix_3dof"]) {
+            mat_node = dof_node["transform_matrix_3dof"];
+        } else if (dof_node["transformation_matrix"]) {
+            mat_node = dof_node["transformation_matrix"];
+        } else if (dof_node["projection_matrix"]) {
+            mat_node = dof_node["projection_matrix"];
+        }
+
+        MatrixNd T_mat;
+        if (mat_node && parse_matrix_nx6(mat_node, T_mat)) {
+            return DofTransformer(T_mat, active_dofs);
+        }
+
+        if (!active_names.empty()) {
+            return DofTransformer::from_dof_names(active_names);
+        }
+
+        if (dof_node["preset"]) {
+            std::string preset = dof_node["preset"].as<std::string>();
+            if (preset == "FULL_6DOF") {
+                return DofTransformer::make_6dof();
+            } else if (preset == "ROV_3DOF_SURGE_HEAVE_YAW" || preset == "ROV_3DOF_CONFIG_1") {
+                return DofTransformer::make_rov_3dof();
+            } else if (preset == "PLANAR_3DOF") {
+                return DofTransformer::make_planar_3dof();
+            } else if (preset == "ROV_4DOF") {
+                return DofTransformer::make_rov_4dof();
+            } else {
+                return DofTransformer::make_rov_3dof();
+            }
+        }
+    }
+    return DofTransformer::make_rov_3dof();
+}
+
 } // anonymous namespace
 
 RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
@@ -239,31 +323,8 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
     }
 
     // --- 4. Cấu hình bậc tự do (DOF) ---
-    if (root["dof_config"]) {
-        auto dof_node = root["dof_config"];
-        if (dof_node["active_dofs"] && dof_node["active_dofs"].IsSequence()) {
-            std::vector<std::string> names;
-            for (const auto& item : dof_node["active_dofs"]) {
-                names.push_back(item.as<std::string>());
-            }
-            config.dof_transformer = DofTransformer::from_dof_names(names);
-        } else if (dof_node["preset"]) {
-            std::string preset = dof_node["preset"].as<std::string>();
-            if (preset == "FULL_6DOF") {
-                config.dof_transformer = DofTransformer::make_6dof();
-            } else if (preset == "ROV_3DOF_SURGE_HEAVE_YAW") {
-                config.dof_transformer = DofTransformer::make_rov_3dof();
-            } else if (preset == "PLANAR_3DOF") {
-                config.dof_transformer = DofTransformer::make_planar_3dof();
-            } else if (preset == "ROV_4DOF") {
-                config.dof_transformer = DofTransformer::make_rov_4dof();
-            } else {
-                config.dof_transformer = DofTransformer::make_rov_3dof();
-            }
-        }
-    } else {
-        config.dof_transformer = DofTransformer::make_rov_3dof();
-    }
+    config.dof_transformer = parse_dof_transformer_from_node(root);
+    config.dof_config = config.dof_transformer.to_dof_config();
 
     // --- 5. Các thông số môi trường NED ---
     if (root["ned_environment"]) {
@@ -331,6 +392,20 @@ void ConfigLoader::save_to_yaml(const RovConfig& config, const std::string& file
         throw std::runtime_error("ConfigLoader::save_to_yaml failed to open '" + filepath + "' for writing.");
     }
     fout << out.c_str();
+}
+
+DofTransformer ConfigLoader::load_dof_transformer(const std::string& filepath) {
+    YAML::Node root;
+    try {
+        root = YAML::LoadFile(filepath);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("ConfigLoader::load_dof_transformer failed to open file '" + filepath + "': " + e.what());
+    }
+    return parse_dof_transformer_from_node(root);
+}
+
+DofConfig ConfigLoader::load_dof_config(const std::string& filepath) {
+    return load_dof_transformer(filepath).to_dof_config();
 }
 
 } // namespace nav_dynamics

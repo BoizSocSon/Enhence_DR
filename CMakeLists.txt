@@ -18,10 +18,17 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # Find yaml-cpp for configuration parsing
 find_package(yaml-cpp REQUIRED)
 
+if(TARGET yaml-cpp::yaml-cpp)
+    set(YAML_CPP_TARGET yaml-cpp::yaml-cpp)
+else()
+    set(YAML_CPP_TARGET yaml-cpp)
+endif()
+
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${EIGEN3_INCLUDE_DIR}
+    ${YAML_CPP_INCLUDE_DIR}
 )
 
 # Core Library Sources
@@ -65,7 +72,7 @@ target_include_directories(nav_dynamics PUBLIC
 
 target_link_libraries(nav_dynamics PUBLIC
     Eigen3::Eigen
-    yaml-cpp
+    ${YAML_CPP_TARGET}
 )
 
 # Enable testing

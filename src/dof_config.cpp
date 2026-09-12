@@ -40,6 +40,38 @@ DofConfig::DofConfig(const std::vector<DofIndex>& active_dofs)
     rebuild_projection_matrix();
 }
 
+DofConfig::DofConfig(const MatrixNd& custom_P, const std::vector<DofIndex>& active_dofs)
+    : P_(custom_P) {
+    if (custom_P.cols() != 6) {
+        throw std::invalid_argument("DofConfig: custom_P must have 6 columns!");
+    }
+    if (custom_P.rows() < 1 || custom_P.rows() > 6) {
+        throw std::invalid_argument("DofConfig: custom_P rows must be between 1 and 6!");
+    }
+    if (!active_dofs.empty()) {
+        if (active_dofs.size() != static_cast<size_t>(custom_P.rows())) {
+            throw std::invalid_argument("DofConfig: active_dofs size mismatch!");
+        }
+        active_dofs_ = active_dofs;
+    } else {
+        active_dofs_.clear();
+        for (Eigen::Index r = 0; r < custom_P.rows(); ++r) {
+            Eigen::Index max_col = 0;
+            double max_val = custom_P.row(r).cwiseAbs().maxCoeff(&max_col);
+            if (max_val > 1e-6 && max_col >= 0 && max_col < 6) {
+                active_dofs_.push_back(static_cast<DofIndex>(max_col));
+            }
+        }
+    }
+}
+
+DofConfig::DofConfig(const DofTransformer& transformer)
+    : active_dofs_(transformer.active_dofs()), P_(transformer.T_matrix()) {}
+
+DofTransformer DofConfig::to_transformer() const {
+    return DofTransformer(P_, active_dofs_);
+}
+
 void DofConfig::rebuild_projection_matrix() {
     const size_t n = active_dofs_.size();
     P_ = MatrixNd::Zero(n, 6);

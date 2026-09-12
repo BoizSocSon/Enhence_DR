@@ -34,8 +34,18 @@ public:
                                           const Vector6d& nu,
                                           const Vector6d& nu_r) const;
 
+    /// Tính ma trận Coriolis thu giảm n x n cho bộ biến đổi DofTransformer đã cho: C_r = T * C * T^T
+    [[nodiscard]] MatrixNd compute_reduced(const DofTransformer& transformer,
+                                          const Vector6d& nu,
+                                          const Vector6d& nu_r) const;
+
     /// Tính véc-tơ lực Coriolis thu giảm n x 1 cho cấu hình DOF đã cho
     [[nodiscard]] VectorNd compute_coriolis_force_reduced(const DofConfig& config,
+                                                         const Vector6d& nu,
+                                                         const Vector6d& nu_r) const;
+
+    /// Tính véc-tơ lực Coriolis thu giảm n x 1 cho bộ biến đổi DofTransformer đã cho: tau_C_r = T * tau_C
+    [[nodiscard]] VectorNd compute_coriolis_force_reduced(const DofTransformer& transformer,
                                                          const Vector6d& nu,
                                                          const Vector6d& nu_r) const;
 

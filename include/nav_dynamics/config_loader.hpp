@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nav_dynamics/types.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "nav_dynamics/dof_transformer.hpp"
 #include "nav_dynamics/thruster_allocation.hpp"
 #include <string>
@@ -41,6 +42,7 @@ struct RovConfig {
     VehicleParameters vehicle_params;
     ThrusterAllocation thruster_allocation;
     DofTransformer dof_transformer;
+    DofConfig dof_config;
     NedEnvironment ned_env;
     ArduSubConfig ardusub_cfg;
 };
@@ -56,6 +58,12 @@ public:
 
     /// Nạp nhanh chỉ các thông số vật lý và thủy động học (VehicleParameters) từ tệp YAML
     static VehicleParameters load_vehicle_parameters(const std::string& filepath);
+
+    /// Nạp nhanh bộ biến đổi bậc tự do (DofTransformer) từ tệp YAML
+    static DofTransformer load_dof_transformer(const std::string& filepath);
+
+    /// Nạp nhanh cấu hình bậc tự do (DofConfig) từ tệp YAML
+    static DofConfig load_dof_config(const std::string& filepath);
 
     /// Lưu cấu hình ROV ra một tệp YAML
     static void save_to_yaml(const RovConfig& config, const std::string& filepath);

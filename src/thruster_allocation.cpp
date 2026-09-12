@@ -77,6 +77,15 @@ VectorNd ThrusterAllocation::forward_allocation_reduced(const DofConfig& config,
     return config.reduce_vector(tau_6d);
 }
 
+VectorNd ThrusterAllocation::forward_allocation_reduced(const DofTransformer& transformer, const VectorNd& thrusts) const {
+    Vector6d tau_6d = forward_allocation(thrusts);
+    return transformer.transform_wrench(tau_6d);
+}
+
+MatrixNd ThrusterAllocation::compute_reduced_B(const DofTransformer& transformer) const {
+    return transformer.transform_thruster_allocation(B_);
+}
+
 VectorNd ThrusterAllocation::inverse_allocation(const Vector6d& desired_tau) const {
     return B_pinv_ * desired_tau;
 }
@@ -84,6 +93,13 @@ VectorNd ThrusterAllocation::inverse_allocation(const Vector6d& desired_tau) con
 VectorNd ThrusterAllocation::inverse_allocation_reduced(const DofConfig& config, const VectorNd& desired_tau_r) const {
     // Chiếu ma trận phân bổ vào không gian thu giảm: B_r = P * B (n x k)
     MatrixNd B_r = config.projection_matrix() * B_;
+    MatrixNd B_r_pinv = B_r.completeOrthogonalDecomposition().pseudoInverse();
+    return B_r_pinv * desired_tau_r;
+}
+
+VectorNd ThrusterAllocation::inverse_allocation_reduced(const DofTransformer& transformer, const VectorNd& desired_tau_r) const {
+    // Chiếu ma trận phân bổ vào không gian thu giảm: B_r = T * B (n x k)
+    MatrixNd B_r = transformer.transform_thruster_allocation(B_);
     MatrixNd B_r_pinv = B_r.completeOrthogonalDecomposition().pseudoInverse();
     return B_r_pinv * desired_tau_r;
 }

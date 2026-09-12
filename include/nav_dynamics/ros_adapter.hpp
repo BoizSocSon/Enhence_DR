@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nav_dynamics/types.hpp"
+#include "nav_dynamics/dof_transformer.hpp"
 #include <array>
 #include <cstring>
 
@@ -99,6 +100,23 @@ public:
     // --- Các thao tác mảng phẳng nhanh / Zero-Copy ---
     static void to_flat_6d(const Vector6d& in, double* out_6d);
     static Vector6d from_flat_6d(const double* in_6d);
+
+    // --- Các hàm chuyển đổi thu giảm bậc tự do 6DOF <-> 3DOF / n-DOF qua DofTransformer ---
+    static VectorNd reduce_vector(const Vector6d& v_6d, const DofTransformer& transformer);
+    static Vector6d expand_vector(const VectorNd& v_r, const DofTransformer& transformer,
+                                  const Vector6d& default_constrained = Vector6d::Zero());
+
+    static VectorNd to_reduced_twist(const Vector6d& nu, const DofTransformer& transformer);
+    static Vector6d from_reduced_twist(const VectorNd& nu_r, const DofTransformer& transformer);
+
+    static VectorNd to_reduced_wrench(const Vector6d& tau, const DofTransformer& transformer);
+    static Vector6d from_reduced_wrench(const VectorNd& tau_r, const DofTransformer& transformer);
+
+    static VectorNd to_reduced_accel(const Vector6d& nu_dot, const DofTransformer& transformer);
+    static Vector6d from_reduced_accel(const VectorNd& nu_dot_r, const DofTransformer& transformer);
+
+    static TwistPOD to_rov_3dof_twist_pod(double u, double w, double r);
+    static void from_rov_3dof_twist_pod(const TwistPOD& pod, double& u, double& w, double& r);
 
     // --- Các template Duck-Typed ánh xạ trực tiếp sang thông điệp ROS 1 / ROS 2 ---
     // Cách sử dụng trong nút ROS:

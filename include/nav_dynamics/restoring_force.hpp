@@ -29,6 +29,10 @@ public:
     /// Tính véc-tơ hồi phục thu giảm n x 1 cho cấu hình DOF đã cho
     [[nodiscard]] VectorNd compute_reduced(const DofConfig& config, const KinematicState& state) const;
 
+    /// Tính véc-tơ hồi phục thu giảm n x 1 cho bộ biến đổi DofTransformer: g_r = T * g
+    [[nodiscard]] VectorNd compute_reduced(const DofTransformer& transformer, const KinematicState& state) const;
+    [[nodiscard]] VectorNd compute_reduced(const DofTransformer& transformer, const Matrix3d& R_nb) const;
+
     /// Tính lực thẳng đứng thuần (W - B) khi chìm dưới nước
     [[nodiscard]] double net_submerged_weight() const;
 

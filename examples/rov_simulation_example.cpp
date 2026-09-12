@@ -3,6 +3,7 @@
 #include "nav_dynamics/config_loader.hpp"
 #include "nav_dynamics/ros_adapter.hpp"
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 
 int main() {
@@ -12,6 +13,9 @@ int main() {
 
     // 1. Nạp cấu hình ROV từ tệp YAML (chứa các thông số cố định của ROV và thông số ArduSub)
     std::string config_path = "config/rov_params.yaml";
+    if (!std::ifstream(config_path).good()) {
+        config_path = "../config/rov_params.yaml";
+    }
     if (!std::ifstream(config_path).good()) {
         config_path = "/home/stevehoang/Navigation_System_Library/config/rov_params.yaml";
     }

@@ -33,9 +33,19 @@ MatrixNd DampingMatrixEvaluator::compute_reduced(const DofConfig& config, const 
     return config.reduce_matrix(D);
 }
 
+MatrixNd DampingMatrixEvaluator::compute_reduced(const DofTransformer& transformer, const Vector6d& nu_r) const {
+    Matrix6d D = compute_D(nu_r);
+    return transformer.transform_damping(D);
+}
+
 VectorNd DampingMatrixEvaluator::compute_damping_force_reduced(const DofConfig& config, const Vector6d& nu_r) const {
     Vector6d f = compute_damping_force(nu_r);
     return config.reduce_vector(f);
+}
+
+VectorNd DampingMatrixEvaluator::compute_damping_force_reduced(const DofTransformer& transformer, const Vector6d& nu_r) const {
+    Vector6d f = compute_damping_force(nu_r);
+    return transformer.transform_vector(f);
 }
 
 bool DampingMatrixEvaluator::is_dissipative(const Vector6d& nu_r) const {

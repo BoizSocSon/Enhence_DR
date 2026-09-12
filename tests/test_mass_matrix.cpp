@@ -12,7 +12,7 @@ int main() {
     params.I_b << 0.16, 0.0,  0.0,
                   0.0,  0.35, 0.0,
                   0.0,  0.0,  0.35;
-    params.set_added_mass_diagonal(-5.5, -8.0, -14.6, -0.05, -0.12, -0.12);
+    params.set_added_mass_diagonal(5.5, 8.0, 14.6, 0.05, 0.12, 0.12);
 
     nav_dynamics::MassMatrixEvaluator evaluator(params);
 

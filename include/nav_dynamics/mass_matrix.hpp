@@ -39,8 +39,14 @@ public:
     /// Tính ma trận khối lượng thu giảm n x n cho cấu hình DOF đã cho
     [[nodiscard]] MatrixNd compute_reduced(const DofConfig& config) const;
 
+    /// Tính ma trận khối lượng thu giảm n x n cho bộ biến đổi DofTransformer đã cho: M_r = T * M * T^T
+    [[nodiscard]] MatrixNd compute_reduced(const DofTransformer& transformer) const;
+
     /// Giải hệ phương trình M_r * x_r = b_r cho không gian thu giảm n-DOF
     [[nodiscard]] VectorNd solve_reduced(const DofConfig& config, const VectorNd& b_r) const;
+
+    /// Giải hệ phương trình M_r * x_r = b_r cho không gian thu giảm n-DOF qua DofTransformer
+    [[nodiscard]] VectorNd solve_reduced(const DofTransformer& transformer, const VectorNd& b_r) const;
 
     /// Các hàm tĩnh hỗ trợ tính toán
     static Matrix6d compute_M_RB(double mass, const Vector3d& r_G, const Matrix3d& I_b);

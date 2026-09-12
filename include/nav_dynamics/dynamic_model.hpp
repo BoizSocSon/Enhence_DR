@@ -86,11 +86,20 @@ public:
                                                      const Vector6d& tau,
                                                      const FluidCurrent& current = FluidCurrent()) const;
 
-    /// Động lực học nghịch:
+    /// Lấy số chiều không gian thu giảm hiện tại (ví dụ: 3 cho ROV 3-DOF)
+    [[nodiscard]] size_t reduced_dim() const { return transformer_.reduced_dim(); }
+
+    /// Động lực học nghịch (6D đầy đủ):
     /// Tính lực điều khiển cần thiết tau = M*nu_dot + C(nu)*nu + D(nu_r)*nu_r + g(eta)
     [[nodiscard]] Vector6d compute_inverse_dynamics(const KinematicState& state,
                                                     const Vector6d& nu_dot,
                                                     const FluidCurrent& current = FluidCurrent()) const;
+
+    /// Động lực học nghịch trực tiếp trong không gian thu giảm n-DOF (ví dụ: 3-DOF):
+    /// tau_r = M_r*nu_dot_r + C_r*nu_r + D_r*nu_r + g_r
+    [[nodiscard]] VectorNd compute_inverse_dynamics_reduced(const KinematicState& state,
+                                                           const VectorNd& nu_dot_r,
+                                                           const FluidCurrent& current = FluidCurrent()) const;
 
     /// Tích phân số: 1 bước tích phân Euler
     void step_euler(KinematicState& state,

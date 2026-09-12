@@ -16,6 +16,11 @@ public:
     DofConfig();
     explicit DofConfig(DofPreset preset);
     explicit DofConfig(const std::vector<DofIndex>& active_dofs);
+    explicit DofConfig(const MatrixNd& custom_P, const std::vector<DofIndex>& active_dofs = {});
+    explicit DofConfig(const DofTransformer& transformer);
+
+    /// Chuyển đổi sang DofTransformer
+    [[nodiscard]] DofTransformer to_transformer() const;
 
     /// Lấy danh sách các chỉ số DOF đang hoạt động hiện tại
     [[nodiscard]] const std::vector<DofIndex>& active_dofs() const { return active_dofs_; }
