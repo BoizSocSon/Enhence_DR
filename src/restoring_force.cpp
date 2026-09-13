@@ -12,27 +12,23 @@ void RestoringForceEvaluator::set_parameters(const VehicleParameters& params) {
 
 Vector6d RestoringForceEvaluator::calculate_g(double mass, double volume, double fluid_density, double g_acc,
                                              const Vector3d& r_G, const Vector3d& r_B, const Matrix3d& R_nb) {
-    double W = mass * g_acc;
-    double B = fluid_density * g_acc * volume;
+    const double W = mass * g_acc;
+    const double B = fluid_density * g_acc * volume;
 
-    // Véc-tơ trọng lực trong hệ NED: [0, 0, W]^T
-    Vector3d f_g_ned(0.0, 0.0, W);
-    // Véc-tơ lực nổi trong hệ NED: [0, 0, -B]^T
-    Vector3d f_b_ned(0.0, 0.0, -B);
+    // Véc-tơ lực trong hệ NED
+    const Vector3d f_g_ned(0.0, 0.0, W);
+    const Vector3d f_b_ned(0.0, 0.0, -B);
 
-    // Biến đổi sang hệ thân tàu: f_b = R_nb^T * f_n
-    Matrix3d R_bn = R_nb.transpose();
-    Vector3d f_g_body = R_bn * f_g_ned;
-    Vector3d f_b_body = R_bn * f_b_ned;
+    // Biến đổi sang hệ thân tàu: f_body = R_nb^T * f_ned
+    const Matrix3d R_bn = R_nb.transpose();
+    const Vector3d f_g_body = R_bn * f_g_ned;
+    const Vector3d f_b_body = R_bn * f_b_ned;
 
-    // Tổng lực thủy tĩnh trong hệ thân tàu
-    Vector3d f_hydro_body = f_g_body + f_b_body;
+    // Tổng lực và mô-men thủy tĩnh trong hệ thân tàu
+    const Vector3d f_hydro_body = f_g_body + f_b_body;
+    const Vector3d m_hydro_body = r_G.cross(f_g_body) + r_B.cross(f_b_body);
 
-    // Tổng mô-men thủy tĩnh trong hệ thân tàu
-    Vector3d m_hydro_body = r_G.cross(f_g_body) + r_B.cross(f_b_body);
-
-    // Trong phương trình chuyển động: M*nu_dot + ... + g(eta) = tau
-    // Do đó g(eta) = - [f_hydro_body; m_hydro_body]
+    // Trong phương trình: M*nu_dot + ... + g(eta) = tau → g(eta) = -[f; m]
     Vector6d g;
     g.head<3>() = -f_hydro_body;
     g.tail<3>() = -m_hydro_body;
@@ -56,19 +52,12 @@ Vector6d RestoringForceEvaluator::compute_g_state(const KinematicState& state) c
     return compute_g(state.R_nb());
 }
 
-VectorNd RestoringForceEvaluator::compute_reduced(const DofConfig& config, const KinematicState& state) const {
-    Vector6d g_full = compute_g_state(state);
-    return config.reduce_vector(g_full);
-}
-
 VectorNd RestoringForceEvaluator::compute_reduced(const DofTransformer& transformer, const KinematicState& state) const {
-    Vector6d g_full = compute_g_state(state);
-    return transformer.transform_restoring(g_full);
+    return transformer.reduce_vector(compute_g_state(state));
 }
 
 VectorNd RestoringForceEvaluator::compute_reduced(const DofTransformer& transformer, const Matrix3d& R_nb) const {
-    Vector6d g_full = compute_g(R_nb);
-    return transformer.transform_restoring(g_full);
+    return transformer.reduce_vector(compute_g(R_nb));
 }
 
 double RestoringForceEvaluator::net_submerged_weight() const {

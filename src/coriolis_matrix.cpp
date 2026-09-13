@@ -11,43 +11,34 @@ void CoriolisMatrixEvaluator::set_parameters(const VehicleParameters& params) {
 
 Matrix6d CoriolisMatrixEvaluator::calculate_C_RB(double mass, const Vector3d& r_G,
                                                  const Matrix3d& I_b, const Vector6d& nu) {
-    Vector3d nu1 = nu.head<3>(); // Vận tốc tịnh tiến [u, v, w]^T
-    Vector3d nu2 = nu.tail<3>(); // Vận tốc góc [p, q, r]^T
+    const Vector3d nu1 = nu.head<3>(); // Vận tốc tịnh tiến [u, v, w]^T
+    const Vector3d nu2 = nu.tail<3>(); // Vận tốc góc [p, q, r]^T
 
-    // a = nu1 + nu2 x r_G
-    Vector3d a = nu1 + nu2.cross(r_G);
+    // a = nu1 + nu2 × r_G
+    const Vector3d a = nu1 + nu2.cross(r_G);
 
-    // Các ma trận phản đối xứng
-    Matrix3d s_a = skew(a);
-    Matrix3d s_Ib_nu2 = skew(I_b * nu2);
+    const Matrix3d s_a = skew(a);
+    const Matrix3d s_Ib_nu2 = skew(I_b * nu2);
 
     Matrix6d C_rb = Matrix6d::Zero();
-    // Khối trên-trái: 0_3x3
-    // Khối trên-phải: -m * [a]_\times
     C_rb.block<3, 3>(0, 3) = -mass * s_a;
-    // Khối dưới-trái: -m * [a]_\times
     C_rb.block<3, 3>(3, 0) = -mass * s_a;
-    // Khối dưới-phải: -[I_b * nu2]_\times
     C_rb.block<3, 3>(3, 3) = -s_Ib_nu2;
 
     return C_rb;
 }
 
 Matrix6d CoriolisMatrixEvaluator::calculate_C_A(const Matrix6d& M_A, const Vector6d& nu_r) {
-    Vector6d a_full = M_A * nu_r;
-    Vector3d a1 = a_full.head<3>(); // a1 = M_A11 * nu_r1 + M_A12 * nu_r2
-    Vector3d a2 = a_full.tail<3>(); // a2 = M_A21 * nu_r1 + M_A22 * nu_r2
+    const Vector6d a_full = M_A * nu_r;
+    const Vector3d a1 = a_full.head<3>();
+    const Vector3d a2 = a_full.tail<3>();
 
-    Matrix3d s_a1 = skew(a1);
-    Matrix3d s_a2 = skew(a2);
+    const Matrix3d s_a1 = skew(a1);
+    const Matrix3d s_a2 = skew(a2);
 
     Matrix6d C_a = Matrix6d::Zero();
-    // Khối trên-trái: 0_3x3
-    // Khối trên-phải: -[a1]_\times
     C_a.block<3, 3>(0, 3) = -s_a1;
-    // Khối dưới-trái: -[a1]_\times
     C_a.block<3, 3>(3, 0) = -s_a1;
-    // Khối dưới-phải: -[a2]_\times
     C_a.block<3, 3>(3, 3) = -s_a2;
 
     return C_a;
@@ -66,36 +57,19 @@ Matrix6d CoriolisMatrixEvaluator::compute_C(const Vector6d& nu, const Vector6d& 
 }
 
 Vector6d CoriolisMatrixEvaluator::compute_coriolis_force(const Vector6d& nu, const Vector6d& nu_r) const {
-    // tau_C = C_RB(nu)*nu + C_A(nu_r)*nu_r
     return compute_C_RB(nu) * nu + compute_C_A(nu_r) * nu_r;
-}
-
-MatrixNd CoriolisMatrixEvaluator::compute_reduced(const DofConfig& config,
-                                                 const Vector6d& nu,
-                                                 const Vector6d& nu_r) const {
-    Matrix6d C = compute_C(nu, nu_r);
-    return config.reduce_matrix(C);
 }
 
 MatrixNd CoriolisMatrixEvaluator::compute_reduced(const DofTransformer& transformer,
                                                  const Vector6d& nu,
                                                  const Vector6d& nu_r) const {
-    Matrix6d C = compute_C(nu, nu_r);
-    return transformer.transform_coriolis(C);
-}
-
-VectorNd CoriolisMatrixEvaluator::compute_coriolis_force_reduced(const DofConfig& config,
-                                                                const Vector6d& nu,
-                                                                const Vector6d& nu_r) const {
-    Vector6d f = compute_coriolis_force(nu, nu_r);
-    return config.reduce_vector(f);
+    return transformer.reduce_matrix(compute_C(nu, nu_r));
 }
 
 VectorNd CoriolisMatrixEvaluator::compute_coriolis_force_reduced(const DofTransformer& transformer,
                                                                 const Vector6d& nu,
                                                                 const Vector6d& nu_r) const {
-    Vector6d f = compute_coriolis_force(nu, nu_r);
-    return transformer.transform_vector(f);
+    return transformer.reduce_vector(compute_coriolis_force(nu, nu_r));
 }
 
 } // namespace nav_dynamics

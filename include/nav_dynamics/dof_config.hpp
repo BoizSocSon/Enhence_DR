@@ -8,8 +8,10 @@
 namespace nav_dynamics {
 
 /**
- * @brief Quản lý cấu hình bậc tự do (DOF), các chỉ số hoạt động,
- * và toán tử chiếu tuyến tính giữa không gian 6 bậc tự do và không gian thu giảm n bậc tự do.
+ * @brief Thin wrapper quanh DofTransformer, cung cấp API tương thích ngược
+ * sử dụng thuật ngữ "projection matrix" (P) thay vì "transformation matrix" (T).
+ * 
+ * Nội bộ delegate toàn bộ sang DofTransformer. Không lưu trữ dữ liệu riêng.
  */
 class DofConfig {
 public:
@@ -20,52 +22,47 @@ public:
     explicit DofConfig(const DofTransformer& transformer);
 
     /// Chuyển đổi sang DofTransformer
-    [[nodiscard]] DofTransformer to_transformer() const;
+    [[nodiscard]] const DofTransformer& transformer() const { return transformer_; }
+    [[nodiscard]] DofTransformer to_transformer() const { return transformer_; }
 
     /// Lấy danh sách các chỉ số DOF đang hoạt động hiện tại
-    [[nodiscard]] const std::vector<DofIndex>& active_dofs() const { return active_dofs_; }
+    [[nodiscard]] const std::vector<DofIndex>& active_dofs() const { return transformer_.active_dofs(); }
 
     /// Số chiều của không gian trạng thái thu giảm (1 <= n <= 6)
-    [[nodiscard]] size_t dim() const { return active_dofs_.size(); }
+    [[nodiscard]] size_t dim() const { return transformer_.reduced_dim(); }
 
     /// Kiểm tra xem một bậc tự do cụ thể có đang hoạt động hay không
-    [[nodiscard]] bool is_active(DofIndex dof) const;
+    [[nodiscard]] bool is_active(DofIndex dof) const { return transformer_.is_dof_active(dof); }
 
-    /// Lấy chỉ số (0..n-1) của một DOF đang hoạt động trong không gian thu giảm, trả về -1 nếu không hoạt động
-    [[nodiscard]] int reduced_index_of(DofIndex dof) const;
+    /// Lấy chỉ số (0..n-1) của một DOF đang hoạt động, trả về -1 nếu không hoạt động
+    [[nodiscard]] int reduced_index_of(DofIndex dof) const { return transformer_.reduced_index_of(dof); }
 
-    /// Lấy ma trận chiếu P thuộc R^{n x 6} sao cho v_reduced = P * v_full
-    [[nodiscard]] const MatrixNd& projection_matrix() const { return P_; }
+    /// Lấy ma trận chiếu P ∈ R^{n×6} (≡ T_matrix() của DofTransformer)
+    [[nodiscard]] const MatrixNd& projection_matrix() const { return transformer_.T_matrix(); }
 
-    /// Thu giảm số chiều của véc-tơ 6D: v_r = P * v
-    [[nodiscard]] VectorNd reduce_vector(const Vector6d& v) const;
+    /// Thu giảm véc-tơ 6D: v_r = P * v
+    [[nodiscard]] VectorNd reduce_vector(const Vector6d& v) const { return transformer_.reduce_vector(v); }
 
-    /// Thu giảm số chiều của ma trận 6x6: M_r = P * M * P^T
-    [[nodiscard]] MatrixNd reduce_matrix(const Matrix6d& M) const;
+    /// Thu giảm ma trận 6x6: M_r = P * M * P^T
+    [[nodiscard]] MatrixNd reduce_matrix(const Matrix6d& M) const { return transformer_.reduce_matrix(M); }
 
-    /// Tái tạo véc-tơ 6D: v_full = P^T * v_r, các DOF không hoạt động gán bằng default_val
+    /// Tái tạo véc-tơ 6D: các DOF không hoạt động gán bằng default_val
     [[nodiscard]] Vector6d expand_vector(const VectorNd& v_r, double default_val = 0.0) const;
 
     /// Tái tạo ma trận 6x6: M_full = P^T * M_r * P
-    [[nodiscard]] Matrix6d expand_matrix(const MatrixNd& M_r) const;
+    [[nodiscard]] Matrix6d expand_matrix(const MatrixNd& M_r) const { return transformer_.expand_matrix(M_r); }
 
     /// Tên gọi dễ đọc của các DOF đang hoạt động
-    [[nodiscard]] std::vector<std::string> active_dof_names() const;
+    [[nodiscard]] std::vector<std::string> active_dof_names() const { return transformer_.active_dof_names(); }
 
     /// Các hàm khởi tạo tĩnh phụ trợ (factory helpers)
     static DofConfig make_6dof();
     static DofConfig make_rov_4dof();
     static DofConfig make_rov_3dof();
     static DofConfig make_planar_3dof();
-    static DofConfig make_rov_6dof_full();
-    static DofConfig make_rov_4dof_config_1();
-    static DofConfig make_rov_3dof_config_1();
 
 private:
-    void rebuild_projection_matrix();
-
-    std::vector<DofIndex> active_dofs_;
-    MatrixNd P_; ///< Ma trận chiếu (n x 6)
+    DofTransformer transformer_;
 };
 
 } // namespace nav_dynamics

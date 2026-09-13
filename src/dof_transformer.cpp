@@ -5,6 +5,10 @@
 
 namespace nav_dynamics {
 
+// =============================================================================
+// Constructors
+// =============================================================================
+
 DofTransformer::DofTransformer()
     : DofTransformer(DofPreset::ROV_6DOF_FULL) {}
 
@@ -51,6 +55,7 @@ DofTransformer::DofTransformer(const MatrixNd& custom_T, const std::vector<DofIn
         }
         active_dofs_ = active_dofs;
     } else {
+        // Suy ra DOF hoạt động từ cột có giá trị tuyệt đối lớn nhất trên mỗi hàng
         active_dofs_.clear();
         for (Eigen::Index r = 0; r < custom_T.rows(); ++r) {
             Eigen::Index max_col = 0;
@@ -62,6 +67,10 @@ DofTransformer::DofTransformer(const MatrixNd& custom_T, const std::vector<DofIn
     }
 }
 
+// =============================================================================
+// Private helpers
+// =============================================================================
+
 void DofTransformer::build_T_from_active_dofs() {
     T_ = MatrixNd::Zero(reduced_dim_, 6);
     for (size_t i = 0; i < reduced_dim_; ++i) {
@@ -71,6 +80,10 @@ void DofTransformer::build_T_from_active_dofs() {
         }
     }
 }
+
+// =============================================================================
+// DOF queries
+// =============================================================================
 
 bool DofTransformer::is_dof_active(DofIndex dof) const {
     return std::find(active_dofs_.begin(), active_dofs_.end(), dof) != active_dofs_.end();
@@ -106,61 +119,16 @@ bool DofTransformer::is_orthogonal(double tol) const {
     return (T_ * T_.transpose()).isApprox(I_r, tol);
 }
 
-MatrixNd DofTransformer::transform_mass(const Matrix6d& M) const {
+// =============================================================================
+// Core reduction/expansion operations
+// =============================================================================
+
+MatrixNd DofTransformer::reduce_matrix(const Matrix6d& M) const {
     return T_ * M * T_.transpose();
 }
 
-MatrixNd DofTransformer::transform_coriolis(const Matrix6d& C) const {
-    return T_ * C * T_.transpose();
-}
-
-MatrixNd DofTransformer::transform_damping(const Matrix6d& D) const {
-    return T_ * D * T_.transpose();
-}
-
-VectorNd DofTransformer::transform_vector(const Vector6d& v) const {
+VectorNd DofTransformer::reduce_vector(const Vector6d& v) const {
     return T_ * v;
-}
-
-VectorNd DofTransformer::transform_restoring(const Vector6d& g) const {
-    return T_ * g;
-}
-
-VectorNd DofTransformer::transform_wrench(const Vector6d& tau) const {
-    return T_ * tau;
-}
-
-MatrixNd DofTransformer::transform_thruster_allocation(const MatrixNd& B) const {
-    if (B.rows() != 6) {
-        throw std::invalid_argument("DofTransformer::transform_thruster_allocation: B must have 6 rows!");
-    }
-    return T_ * B;
-}
-
-MatrixNd DofTransformer::transform_jacobian(const Matrix6d& J) const {
-    return T_ * J * T_.transpose();
-}
-
-MatrixNd DofTransformer::compute_reduced_jacobian(const KinematicState& state) const {
-    return transform_jacobian(state.J_full());
-}
-
-Matrix6d DofTransformer::active_subspace_projector() const {
-    return T_.transpose() * T_;
-}
-
-Vector6d DofTransformer::project_to_active(const Vector6d& v) const {
-    return (T_.transpose() * T_) * v;
-}
-
-Matrix3d DofTransformer::compute_3dof_jacobian(double psi) {
-    Matrix3d J_3;
-    const double c_psi = std::cos(psi);
-    const double s_psi = std::sin(psi);
-    J_3 << c_psi, 0.0, 0.0,
-           s_psi, 0.0, 0.0,
-           0.0,   0.0, 1.0;
-    return J_3;
 }
 
 Vector6d DofTransformer::expand_vector(const VectorNd& v_r,
@@ -168,10 +136,8 @@ Vector6d DofTransformer::expand_vector(const VectorNd& v_r,
     if (static_cast<size_t>(v_r.size()) != reduced_dim_) {
         throw std::invalid_argument("DofTransformer::expand_vector: dimension mismatch!");
     }
-    // Mở rộng về 6D và bù trừ các bậc tự do bị ràng buộc:
     // v_6d = T^T * v_r + (I_6 - T^T * T) * constrained_vals
-    Matrix6d I_6 = Matrix6d::Identity();
-    Matrix6d null_projector = I_6 - (T_.transpose() * T_);
+    Matrix6d null_projector = Matrix6d::Identity() - (T_.transpose() * T_);
     return (T_.transpose() * v_r) + (null_projector * constrained_vals);
 }
 
@@ -182,32 +148,55 @@ Matrix6d DofTransformer::expand_matrix(const MatrixNd& M_r) const {
     return T_.transpose() * M_r * T_;
 }
 
-DofTransformer DofTransformer::make_6dof() {
-    return DofTransformer(DofPreset::ROV_6DOF_FULL);
+Matrix6d DofTransformer::active_subspace_projector() const {
+    return T_.transpose() * T_;
 }
 
-DofTransformer DofTransformer::make_rov_4dof() {
-    return DofTransformer(DofPreset::ROV_4DOF_CONFIG_1);
+Vector6d DofTransformer::project_to_active(const Vector6d& v) const {
+    return (T_.transpose() * T_) * v;
+}
+
+// =============================================================================
+// Thruster allocation & Jacobian (non-trivial transformations)
+// =============================================================================
+
+MatrixNd DofTransformer::transform_thruster_allocation(const MatrixNd& B) const {
+    if (B.rows() != 6) {
+        throw std::invalid_argument("DofTransformer::transform_thruster_allocation: B must have 6 rows!");
+    }
+    return T_ * B;
+}
+
+MatrixNd DofTransformer::compute_reduced_jacobian(const KinematicState& state) const {
+    return reduce_matrix(state.J_full());
+}
+
+// =============================================================================
+// Conversion
+// =============================================================================
+
+DofConfig DofTransformer::to_dof_config() const {
+    return DofConfig(*this);
+}
+
+// =============================================================================
+// Static factory helpers
+// =============================================================================
+
+DofTransformer DofTransformer::make_6dof() {
+    return DofTransformer(DofPreset::ROV_6DOF_FULL);
 }
 
 DofTransformer DofTransformer::make_rov_3dof() {
     return DofTransformer(DofPreset::ROV_3DOF_CONFIG_1);
 }
 
-DofTransformer DofTransformer::make_planar_3dof() {
-    return DofTransformer(std::vector<DofIndex>{DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW});
-}
-
-DofTransformer DofTransformer::make_rov_6dof_full() {
-    return DofTransformer(DofPreset::ROV_6DOF_FULL);
-}
-
-DofTransformer DofTransformer::make_rov_4dof_config_1() {
+DofTransformer DofTransformer::make_rov_4dof() {
     return DofTransformer(DofPreset::ROV_4DOF_CONFIG_1);
 }
 
-DofTransformer DofTransformer::make_rov_3dof_config_1() {
-    return DofTransformer(DofPreset::ROV_3DOF_CONFIG_1);
+DofTransformer DofTransformer::make_planar_3dof() {
+    return DofTransformer(std::vector<DofIndex>{DofIndex::SURGE, DofIndex::SWAY, DofIndex::YAW});
 }
 
 DofTransformer DofTransformer::from_preset(DofPreset preset) {
@@ -237,10 +226,6 @@ DofTransformer DofTransformer::from_dof_names(const std::vector<std::string>& do
         }
     }
     return DofTransformer(active);
-}
-
-DofConfig DofTransformer::to_dof_config() const {
-    return DofConfig(T_, active_dofs_);
 }
 
 DofTransformer DofTransformer::from_matrix(const MatrixNd& custom_T, const std::vector<DofIndex>& active_dofs) {
