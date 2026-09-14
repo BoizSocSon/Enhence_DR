@@ -1,4 +1,5 @@
 #include "nav_dynamics/restoring_force.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "test_common.hpp"
 #include <iostream>
 #include <cmath>
@@ -32,7 +33,7 @@ int main() {
     // 2. Véc-tơ g thu giảm cho ROV 3-DOF
     auto config_3dof = nav_dynamics::DofConfig::make_rov_3dof();
     nav_dynamics::KinematicState state_level;
-    nav_dynamics::VectorNd g_3 = evaluator.compute_reduced(config_3dof, state_level);
+    nav_dynamics::VectorNd g_3 = evaluator.compute_reduced(config_3dof.transformer(), state_level);
     NAV_TEST_ASSERT(g_3.size() == 3, "g_3 size must be 3!");
     NAV_TEST_ASSERT(std::abs(g_3(0)) < 1e-9, "g_3 surge must be 0!");
     NAV_TEST_ASSERT(std::abs(g_3(1) - (-(W_minus_B))) < 1e-9, "g_3 heave must match -(W-B)!");

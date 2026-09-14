@@ -229,7 +229,7 @@ struct KinematicState {
             // Gimbal lock (pitch = +-90 deg): roll và yaw đồng trục
             euler_rpy.x() = 0.0;
             euler_rpy.y() = std::copysign(M_PI / 2.0, sinp);
-            euler_rpy.z() = -2.0 * std::atan2(q.z(), q.w());
+            euler_rpy.z() = 2.0 * std::atan2(q.z(), q.w());
         } else {
             euler_rpy.y() = std::asin(sinp);
 

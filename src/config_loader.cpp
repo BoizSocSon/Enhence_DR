@@ -356,7 +356,7 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
 
     // --- 4. Cấu hình bậc tự do (DOF) ---
     config.dof_transformer = parse_dof_transformer_from_node(root);
-    config.dof_config = config.dof_transformer.to_dof_config();
+    // dof_config() accessor tự suy từ dof_transformer, không cần gán riêng
 
     // --- 5. Các thông số môi trường NED ---
     if (root["ned_environment"]) {
@@ -372,9 +372,19 @@ RovConfig ConfigLoader::load_from_yaml(const std::string& filepath) {
         if (n_node["surface_atmospheric_pressure"]) {
             config.ned_env.surface_atmospheric_pressure = n_node["surface_atmospheric_pressure"].as<double>();
         }
-        if (n_node["nominal_ocean_current"] && n_node["nominal_ocean_current"].IsSequence()) {
+        if (n_node["nominal_ocean_current"]) {
             auto oc = n_node["nominal_ocean_current"];
-            config.ned_env.nominal_ocean_current = Vector3d(oc[0].as<double>(), oc[1].as<double>(), oc[2].as<double>());
+            if (oc.IsSequence() && oc.size() >= 3) {
+                // Format sequence: [v_cN, v_cE, v_cD]
+                config.ned_env.nominal_ocean_current = Vector3d(
+                    oc[0].as<double>(), oc[1].as<double>(), oc[2].as<double>());
+            } else if (oc.IsMap()) {
+                // Format map: v_cN / v_cE / v_cD
+                config.ned_env.nominal_ocean_current = Vector3d(
+                    oc["v_cN"] ? oc["v_cN"].as<double>() : 0.0,
+                    oc["v_cE"] ? oc["v_cE"].as<double>() : 0.0,
+                    oc["v_cD"] ? oc["v_cD"].as<double>() : 0.0);
+            }
         }
     }
 

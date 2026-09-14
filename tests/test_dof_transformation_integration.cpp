@@ -30,7 +30,7 @@ int main() {
 
     nav_dynamics::RovConfig cfg = nav_dynamics::ConfigLoader::load_from_yaml(config_path);
     const auto& transformer = cfg.dof_transformer;
-    const auto& P_cfg = cfg.dof_config;
+    const auto P_cfg = cfg.dof_config();
 
     std::cout << "[TEST] 1. Kiểm tra ma trận chuyển đổi nạp từ YAML..." << std::endl;
     NAV_TEST_ASSERT(transformer.reduced_dim() == 3, "Transformer reduced_dim must be 3!");

@@ -2,6 +2,7 @@
 #include "nav_dynamics/dof_config.hpp"
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
 
 namespace nav_dynamics {
 
@@ -37,6 +38,16 @@ DofTransformer::DofTransformer(const std::vector<DofIndex>& active_dofs)
     if (active_dofs_.size() > 6) {
         throw std::invalid_argument("DofTransformer: active_dofs cannot exceed 6!");
     }
+    // Kiểm tra phần tử trùng — tạo ma trận suy biến nếu có
+    {
+        std::vector<DofIndex> sorted = active_dofs_;
+        std::sort(sorted.begin(), sorted.end());
+        if (std::adjacent_find(sorted.begin(), sorted.end()) != sorted.end()) {
+            throw std::invalid_argument(
+                "DofTransformer: active_dofs contains duplicate entries! "
+                "Duplicates create singular T*T^T matrices.");
+        }
+    }
     build_T_from_active_dofs();
 }
 
@@ -64,6 +75,15 @@ DofTransformer::DofTransformer(const MatrixNd& custom_T, const std::vector<DofIn
                 active_dofs_.push_back(static_cast<DofIndex>(max_col));
             }
         }
+    }
+
+    // Kiểm tra trực chuẩn: T * T^T phải xấp xỉ I_n
+    const MatrixNd TTt = T_ * T_.transpose();
+    const MatrixNd I_n = MatrixNd::Identity(reduced_dim_, reduced_dim_);
+    if (!TTt.isApprox(I_n, 1e-6)) {
+        std::cerr << "[WARNING] DofTransformer: custom_T is not orthonormal "
+                     "(T*T^T != I). This may cause velocity amplification "
+                     "or singular reduced systems." << std::endl;
     }
 }
 

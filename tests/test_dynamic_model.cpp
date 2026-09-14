@@ -1,4 +1,5 @@
 #include "nav_dynamics/dynamic_model.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "nav_dynamics/ros_adapter.hpp"
 #include "test_common.hpp"
 #include <iostream>
@@ -47,7 +48,7 @@ int main() {
     // Phân bổ nghịch cho ROV 3-DOF
     auto cfg_3dof = nav_dynamics::DofConfig::make_rov_3dof();
     nav_dynamics::VectorNd tau_3dof = cfg_3dof.reduce_vector(tau_thrust);
-    nav_dynamics::VectorNd thrusts_recovered = thruster_alloc.inverse_allocation_reduced(cfg_3dof, tau_3dof);
+    nav_dynamics::VectorNd thrusts_recovered = thruster_alloc.inverse_allocation_reduced(cfg_3dof.transformer(), tau_3dof);
     NAV_TEST_ASSERT(thrusts.isApprox(thrusts_recovered, 1e-6), "Inverse thruster allocation failed!");
 
     // 4. Tích phân số (RK4) tiến tới vận tốc giới hạn trong chế độ ROV 3-DOF

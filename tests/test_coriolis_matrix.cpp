@@ -1,4 +1,5 @@
 #include "nav_dynamics/coriolis_matrix.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "test_common.hpp"
 #include <iostream>
 #include <cmath>
@@ -39,7 +40,7 @@ int main() {
     nav_dynamics::Vector6d nu_3dof;
     nu_3dof << 1.5, 0.0, -0.8, 0.0, 0.0, 0.6; // chỉ có u, w, r khác không
     auto config_3dof = nav_dynamics::DofConfig::make_rov_3dof();
-    nav_dynamics::MatrixNd C_3 = evaluator.compute_reduced(config_3dof, nu_3dof, nu_3dof);
+    nav_dynamics::MatrixNd C_3 = evaluator.compute_reduced(config_3dof.transformer(), nu_3dof, nu_3dof);
 
     NAV_TEST_ASSERT(C_3.isZero(1e-9), "Reduced 3-DOF Coriolis matrix C_3 must vanish identically for {u, w, r}!");
 

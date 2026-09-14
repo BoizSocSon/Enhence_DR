@@ -1,4 +1,5 @@
 #include "nav_dynamics/mass_matrix.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "test_common.hpp"
 #include <iostream>
 #include <cmath>
@@ -40,7 +41,7 @@ int main() {
 
     // 6. Kiểm tra ma trận khối lượng thu giảm ROV 3-DOF {u, w, r}
     auto config_3dof = nav_dynamics::DofConfig::make_rov_3dof();
-    nav_dynamics::MatrixNd M_3 = evaluator.compute_reduced(config_3dof);
+    nav_dynamics::MatrixNd M_3 = evaluator.compute_reduced(config_3dof.transformer());
     NAV_TEST_ASSERT(M_3.rows() == 3 && M_3.cols() == 3, "M_3 must be 3x3!");
 
     // Kiểm tra các giá trị đường chéo: m - X_udot = 11.5 + 5.5 = 17.0

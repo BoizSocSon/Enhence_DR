@@ -1,4 +1,5 @@
 #include "nav_dynamics/damping_matrix.hpp"
+#include "nav_dynamics/dof_config.hpp"
 #include "test_common.hpp"
 #include <iostream>
 #include <cmath>
@@ -37,7 +38,7 @@ int main() {
 
     // 3. Ma trận cản thu giảm 3-DOF
     auto config_3dof = nav_dynamics::DofConfig::make_rov_3dof();
-    nav_dynamics::MatrixNd D_3 = evaluator.compute_reduced(config_3dof, nu_r);
+    nav_dynamics::MatrixNd D_3 = evaluator.compute_reduced(config_3dof.transformer(), nu_r);
     NAV_TEST_ASSERT(D_3.rows() == 3 && D_3.cols() == 3, "D_3 dimensions mismatch!");
     NAV_TEST_ASSERT(std::abs(D_3(0, 0) - (4.03 + 18.18 * std::abs(u))) < 1e-9, "D_3(0,0) mismatch!");
     NAV_TEST_ASSERT(std::abs(D_3(1, 1) - (11.17 + 36.99 * std::abs(w))) < 1e-9, "D_3(1,1) mismatch!");
